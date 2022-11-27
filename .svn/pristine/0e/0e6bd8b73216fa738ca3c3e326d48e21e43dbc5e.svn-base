@@ -1,0 +1,1322 @@
+--- RNC_NetCDF.c.old20071127	2007-11-27 12:23:37.000000000 +0000
++++ RNC_NetCDF.c	2011-09-02 16:22:20.000000000 +0000
+@@ -8,6 +8,11 @@
+ 	Modified on: 13/09/2007
+ 	Modified by: Owain Davies
+ 	added in the ability to dump out IQ data prior to fft
++	Modified on: 29/09/2010
++	Modified by: John Nicol (JCN)
++	included dual-pol. parameters; phi dp and rho hv
++	Modified on 04/10/2010 (JCN)
++	included uncoded rapid spectra dump
+ */
+ 
+ 
+@@ -22,7 +27,7 @@
+ #include <math.h>
+ 
+ #include <RNC.h>
+-#include "/home/chilbolton_software/universal_radar_code/RSP/include/RSP.h"
++#include "/root/universal_radar_code/RSP/include/RSP.h"
+ 
+ void RNC_OpenNetcdfFile( URC_ScanStruct *args, int radar, int *ncid )
+ {
+@@ -166,12 +171,14 @@
+ 		case ACROBAT_CODED_SPECTRA :
+ 		case COPERNICUS_SPECTRA :
+ 		case GALILEO_SPECTRA :
++		case TEST_SPECTRA :
+ 		{
+ 			strcat( netcdf_pathfile, "-fft" );
+ 			break;
+ 		}
+ 		case COPERNICUS_SPECTRA_RAPID :
+ 		case GALILEO_SPECTRA_RAPID :
++		case TEST_SPECTRA_RAPID :
+                 {
+                         strcat( netcdf_pathfile, "-fft-rapid" );
+                         break;
+@@ -213,6 +220,9 @@
+ 		case GALILEO :
+ 			strcpy ( buffer, "GALILEO" );
+                         break;
++		case TEST :
++			strcpy ( buffer, "TEST-GALILEO" );
++			break;
+ 		case CAMRA :
+ 			strcpy ( buffer, "CAMRA" );
+                         break;
+@@ -232,9 +242,12 @@
+ 	        case GALILEO :
+                         strcpy ( buffer, "94 GHz radar (GALILEO)");
+                         break;
++	        case TEST :
++                        strcpy ( buffer, "94 GHz radar (TEST-GALILEO)");
++                        break;
+ 	        case CAMRA :
+-		  strcpy ( buffer, "3 GHz Advanced Meteorological Radar (CAMRa)");
+-		  break;
++		        strcpy ( buffer, "3 GHz Advanced Meteorological Radar (CAMRa)");
++		        break;
+         }
+         status = nc_put_att_text( ncid, NC_GLOBAL, "source", strlen(buffer), buffer);
+         if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+@@ -290,7 +303,11 @@
+         if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 
+ 	/* pulses_per_ray */
+-	temp = param->spectra_averaged * param->pulses_per_daq_cycle;
++	if ( radar == CAMRA ) {
++	  temp = param->pulses_per_daq_cycle; }
++	else {
++	  temp = param->spectra_averaged * param->pulses_per_daq_cycle;
++	}
+ 	status = nc_put_att_int( ncid, NC_GLOBAL, "pulses_per_ray", NC_INT, 1, &temp );
+         if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 	
+@@ -334,6 +351,18 @@
+ 	status = nc_put_att_int( ncid, NC_GLOBAL, "ADC_bits_per_sample", NC_INT, 1, &temp);
+ 	if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 
++	if (radar == CAMRA) {
++	  /* radar_constant */
++	  temp_float = 64.7f;
++	  status = nc_put_att_float( ncid, NC_GLOBAL, "radar_constant", NC_FLOAT, 1, &temp_float);
++	  /* receiver_gain */
++	  temp_float = 45.5f;
++	  status = nc_put_att_float( ncid, NC_GLOBAL, "receiver_gain", NC_FLOAT, 1, &temp_float);
++	  /* cable_losses */
++	  temp_float = 4.8f;
++	  status = nc_put_att_float( ncid, NC_GLOBAL, "cable_losses", NC_FLOAT, 1, &temp_float);
++	}
++
+ 	/* scan_datetime */
+ 	strcpy(buffer, scan->date);
+ 	status = nc_put_att_text( ncid, NC_GLOBAL, "scan_datetime", strlen(buffer), buffer);
+@@ -493,7 +522,7 @@
+ 	status = nc_put_att_text( ncid, file_stateid, "long_name", strlen(buffer), buffer);
+ 	if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 
+-        /* go from define to date */
++        /* go from define to data */
+         status = nc_enddef(ncid);
+         if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 
+@@ -586,7 +615,7 @@
+         strcpy( buffer, "vertical angular beamwidth");
+         status = nc_put_att_text( ncid, beamwidthVid, "chilbolton_standard_name", strlen(buffer), buffer);
+         if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-        strcpy( buffer, "verical angular beamwidth");
++        strcpy( buffer, "vertical angular beamwidth");
+         status = nc_put_att_text( ncid, beamwidthVid, "long_name", strlen(buffer), buffer);
+         if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+         strcpy( buffer, "degree");
+@@ -684,6 +713,7 @@
+ 	/* transmit power */
+ 	status = nc_put_var_float(ncid, transmit_powerid, &param->transmit_power);
+         if (status != NC_NOERR) check_netcdf_handle_error(status);
++
+ 	
+ 	/* pulse period */
+ 	status = nc_put_var_float(ncid, pulse_periodid, &param->pulse_period);
+@@ -819,7 +849,8 @@
+ 
+ 	/* define fft_bin_dim */
+ 	if (radar == COPERNICUS_SPECTRA_RAPID) {
+-		status = nc_def_dim( ncid, "fft_bin_dim", param->npsd / 2, &dimensions->fft_bin_dim);
++/*		status = nc_def_dim( ncid, "fft_bin_dim", param->npsd / 2, &dimensions->fft_bin_dim); */
++		status = nc_def_dim( ncid, "fft_bin_dim", param->npsd, &dimensions->fft_bin_dim); 
+ 	} else {
+         	status = nc_def_dim( ncid, "fft_bin_dim", param->npsd, &dimensions->fft_bin_dim);
+        	}
+@@ -894,6 +925,7 @@
+ 	{
+ 		case COPERNICUS_SPECTRA_RAPID :
+ 	  	case GALILEO_SPECTRA_RAPID :
++		case TEST_SPECTRA_RAPID :
+ 	    	{
+ 	      		/* bin_number */
+ 	      		status = nc_def_var( ncid, "bin_number", NC_INT, 1, variable_shape, &obs->bin_numberid);
+@@ -920,6 +952,7 @@
+ 	  	case COPERNICUS :
+ 	  	case GALILEO :
+ 		case CAMRA :
++		case TEST :
+ 	    	{	
+ 	      		printf("Number of observations %d \n", obs->n_obs);
+ 	      		for (n = 0; n < obs->n_obs; n++ )
+@@ -1143,7 +1176,7 @@
+ 			  			strcpy( buffer, "dBZ");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_HC_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 		      			if (strcmp(obs->name[n], "ZED_HCD") == 0)
+@@ -1162,6 +1195,22 @@
+ 			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
++					if (strcmp(obs->name[n], "ZED_VCD") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "ZED_VCD", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "fractional_standard_deviation_of_radar_reflectivity_factor_at_vertical_polarisation_from_spectral_processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "fractional standard deviation of radar reflectivity factor at vertical polarisation from spectral processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "dB");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
+ 		      			if (strcmp(obs->name[n], "ZED_HCP") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "ZED_HCP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1175,7 +1224,7 @@
+ 			  			strcpy( buffer, "dBZ");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_HCP_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 		      			if (strcmp(obs->name[n], "ZED_HCDP") == 0)
+@@ -1194,6 +1243,22 @@
+ 			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
++					if (strcmp(obs->name[n], "ZED_VCDP") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "ZED_VCDP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "fractional_standard_deviation_of_radar_reflectivity_factor_at_vertical_polarisation_from_spectral_processing_using_pulse_compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "fractional standard deviation of radar reflectivity factor at vertical polarisation from spectral processing using pulse compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "dB");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
+ 		      			if (strcmp(obs->name[n], "ZED_XHC") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "ZED_XHC", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1207,7 +1272,7 @@
+ 			  			strcpy( buffer, "dBZ");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_XHC_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 		      			if (strcmp(obs->name[n], "ZED_XHCP") == 0)
+@@ -1223,7 +1288,7 @@
+ 			  			strcpy( buffer, "dBZ");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_XHCP_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 		      			if (strcmp(obs->name[n], "ZED_VC") == 0)
+@@ -1239,7 +1304,7 @@
+ 			  			strcpy( buffer, "dBZ");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_VC_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 		      			if (strcmp(obs->name[n], "ZED_VCP") == 0)
+@@ -1255,7 +1320,7 @@
+ 			  			strcpy( buffer, "dBZ");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_VCP_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 		      			if (strcmp(obs->name[n], "ZED_XVC") == 0)
+@@ -1271,7 +1336,7 @@
+ 			  			strcpy( buffer, "dBZ");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_XVC_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 		      			if (strcmp(obs->name[n], "ZED_XVCP") == 0)
+@@ -1287,9 +1352,52 @@
+ 			  			strcpy( buffer, "dBZ");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZED_XVCP_calibration_offset);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++					}
++		      			if (strcmp(obs->name[n], "SPW_H") == 0)
++					{
++			  			status = nc_def_var( ncid, "SPW_H", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "doppler_spectral_width_at_horizontal_polarisation");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "doppler spectral width at horizontal polarisation");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			 			strcpy( buffer, "m s-1");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++		      			if (strcmp(obs->name[n], "SPW_V") == 0)
++					{
++			  			status = nc_def_var( ncid, "SPW_V", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "doppler_spectral_width_at_vertical_polarisation");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "doppler spectral width at vertical polarisation");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			 			strcpy( buffer, "m s-1");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++		      			if (strcmp(obs->name[n], "SPW_HV") == 0)
++					{
++			  			status = nc_def_var( ncid, "SPW_HV", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "doppler_spectral_width_at_horizontal_and_vertical_polarisation");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "doppler spectral width at horizontal and vertical polarisation");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			 			strcpy( buffer, "m s-1");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 					}
++
+ 		      			if (strcmp(obs->name[n], "SPW_HC") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "SPW_HC", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1304,6 +1412,20 @@
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 					}
++					if (strcmp(obs->name[n], "SPW_VC") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "SPW_VC", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "doppler_spectral_width_at_vertical_polarisation_from_spectral_processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "doppler spectral width at vertical polarisation from spectral processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "m s-1");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                        }
+ 		      			if (strcmp(obs->name[n], "SPW_HCP") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "SPW_HCP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1318,6 +1440,20 @@
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 					}
++					if (strcmp(obs->name[n], "SPW_VCP") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "SPW_VCP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "doppler_spectral_width_at_vertical_polarisation_from_spectral_processing_using_pulse_compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "doppler spectral width at vertical polarisation from spectral processing using pulse compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "m s-1");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                        }
+ 		      			if (strcmp(obs->name[n], "VEL_H") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "VEL_H", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1383,6 +1519,22 @@
+ 			  			status = nc_put_att_float( ncid, obs->varid[n], "folding_velocity", NC_FLOAT, 1, &param->folding_velocity);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
++					if (strcmp(obs->name[n], "VEL_VC") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "VEL_VC", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "radial_velocity_of_scatterers_away_from_instrument_at_vertical_polarisation_from_spectral_processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "radial velocity of scatterers away from instrument at vertical polarisation from spectral processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "m s-1");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                status = nc_put_att_float( ncid, obs->varid[n], "folding_velocity", NC_FLOAT, 1, &param->folding_velocity);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
+ 		      			if (strcmp(obs->name[n], "VEL_HCP") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "VEL_HCP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1399,6 +1551,22 @@
+ 			  			status = nc_put_att_float( ncid, obs->varid[n], "folding_velocity", NC_FLOAT, 1, &param->folding_velocity);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
++					if (strcmp(obs->name[n], "VEL_VCP") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "VEL_VCP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "radial_velocity_of_scatterers_away_from_instrument_at_vertical_polarisation_from_spectral_processing_using_pulse_compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "radial velocity of scatterers away from instrument at vertical polarisation from spectral processing using pulse compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "m s-1");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                status = nc_put_att_float( ncid, obs->varid[n], "folding_velocity", NC_FLOAT, 1, &param->folding_velocity);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
+ 		      			if (strcmp(obs->name[n], "VEL_HCD") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "VEL_HCD", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1415,6 +1583,23 @@
+ 			  			status = nc_put_att_float( ncid, obs->varid[n], "folding_velocity", NC_FLOAT, 1, &param->folding_velocity);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
++					if (strcmp(obs->name[n], "VEL_VCD") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "VEL_VCD", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "standard_deviation_of_radial_velocity_of_scatterers_away_from_instrument_at_vertical_polarisation_from_spectral_processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "standard deviation of radial velocity of scatterers away from instrument at vertical polarisation from spectral processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "m s-1");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                status = nc_put_att_float( ncid, obs->varid[n], "folding_velocity", NC_FLOAT, 1, &param->folding_velocity);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
++
+ 		      			if (strcmp(obs->name[n], "VEL_HCDP") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "VEL_HCDP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1431,6 +1616,23 @@
+ 			  			status = nc_put_att_float( ncid, obs->varid[n], "folding_velocity", NC_FLOAT, 1, &param->folding_velocity);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
++					if (strcmp(obs->name[n], "VEL_VCDP") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "VEL_VCDP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "standard_deviation_of_radial_velocity_of_scatterers_away_from_instrument_at_vertical_polarisation_from_spectral_processing_using_pulse_compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "standard deviation of radial velocity of scatterers away from instrument at vertical polarisation from spectral processing using pulse compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "m s-1");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                status = nc_put_att_float( ncid, obs->varid[n], "folding_velocity", NC_FLOAT, 1, &param->folding_velocity);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
++
+ 		      			if (strcmp(obs->name[n], "PHI_H") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "PHI_H", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1515,6 +1717,20 @@
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 					}
++					if (strcmp(obs->name[n], "PDP") == 0)
++					{
++			  			status = nc_def_var( ncid, "PDP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "differential_phase_shift");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++			 			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "differential phase shift");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "degree");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
+ 					if (strcmp(obs->name[n], "ZDR") == 0)
+                           		{
+                             			status = nc_def_var( ncid, "ZDR", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1544,7 +1760,7 @@
+ 			  			strcpy( buffer, "dB");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZDR_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZDR_C_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 		      			if (strcmp(obs->name[n], "ZDR_CP") == 0)
+@@ -1560,7 +1776,7 @@
+ 			  			strcpy( buffer, "dB");
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+-			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZDR_calibration_offset);
++			  			status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->ZDR_CP_calibration_offset);
+ 			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					}
+ 					if (strcmp(obs->name[n], "LDR") == 0)
+@@ -1591,6 +1807,38 @@
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 					}
++					if (strcmp(obs->name[n], "LDR_HC") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "LDR_HC", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "linear_depolarisation_ratio_at_horizontal_polarisation_from_spectral_processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "linear depolarisation ratio at horizontal polarisation from spectral processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "dB");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++						status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->LDR_HC_calibration_offset);
++						if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
++					if (strcmp(obs->name[n], "LDR_VC") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "LDR_VC", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "linear_depolarisation_ratio_at_vertical_polarisation_from_spectral_processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "linear depolarisation ratio at vertical polarisation from spectral processing");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "dB");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++						status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->LDR_VC_calibration_offset);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
+ 		      			if (strcmp(obs->name[n], "LDR_CP") == 0)
+ 					{
+ 			  			status = nc_def_var( ncid, "LDR_CP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
+@@ -1605,6 +1853,158 @@
+ 			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
+ 			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
+ 					}
++					if (strcmp(obs->name[n], "LDR_HCP") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "LDR_HCP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "linear_depolarisation_ratio_at_horizontal_polarisation_from_spectral_processing_using_pulse_compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "linear depolarisation ratio at horizontal polarisation from spectral processing using pulse compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "dB");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++						status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->LDR_HCP_calibration_offset);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
++					if (strcmp(obs->name[n], "LDR_VCP") == 0)
++                                        {
++                                                status = nc_def_var( ncid, "LDR_VCP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                                strcpy( buffer, "linear_depolarisation_ratio_at_vertical_polarisation_from_spectral_processing_using_pulse_compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "linear depolarisation ratio at vertical polarisation from spectral processing using pulse compression");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++                                                strcpy( buffer, "dB");
++                                                status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++                                                if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++						status = nc_put_att_float( ncid, obs->varid[n], "applied_calibration_offset", NC_FLOAT, 1, &param->LDR_VCP_calibration_offset);
++                                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        }
++					if (strcmp(obs->name[n], "PHIDP_C") == 0)
++					{
++			  			status = nc_def_var( ncid, "PHIDP_C", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "differential_phase_shift");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++			 			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "differential phase shift");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "degree");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "PHIDP_CP") == 0)
++					{
++			  			status = nc_def_var( ncid, "PHIDP_CP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "differential_phase_shift_using_pulse_compression");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++			 			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "differential phase shift using pulse compression");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "degree");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "RHOHV_C") == 0)
++					{
++			  			status = nc_def_var( ncid, "RHOHV_C", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "copolar_cross_correlation_coefficient");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++			 			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "copolar cross correlation coefficient");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "RHOHV_CP") == 0)
++					{
++			  			status = nc_def_var( ncid, "RHOHV_CP", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "copolar_cross_correlation_coefficient_using_pulse_compression");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "chilbolton_standard_name", strlen(buffer), buffer);
++			 			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "copolar cross correlation coefficient using pulse compression");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "long_name", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "I_UNCH") == 0)
++					{
++			  			status = nc_def_var( ncid, "I_UNCH", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "Q_UNCH") == 0)
++					{
++			  			status = nc_def_var( ncid, "Q_UNCH", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "I_UNCV") == 0)
++					{
++			  			status = nc_def_var( ncid, "I_UNCV", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "Q_UNCV") == 0)
++					{
++			  			status = nc_def_var( ncid, "Q_UNCV", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "I_CODH") == 0)
++					{
++			  			status = nc_def_var( ncid, "I_CODH", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "Q_CODH") == 0)
++					{
++			  			status = nc_def_var( ncid, "Q_CODH", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "I_CODV") == 0)
++					{
++			  			status = nc_def_var( ncid, "I_CODV", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
++					if (strcmp(obs->name[n], "Q_CODV") == 0)
++					{
++			  			status = nc_def_var( ncid, "Q_CODV", NC_FLOAT, 2, variable_shape, &obs->varid[n]);
++			  			if (status != NC_NOERR) check_netcdf_handle_error(status);
++			  			strcpy( buffer, "");
++			  			status = nc_put_att_text( ncid, obs->varid[n], "units", strlen(buffer), buffer);
++			  			if (status != NC_NOERR) { check_netcdf_handle_error(status); }
++					}
+ 					/* apply missing value */
+ 					temp_float = -999;
+                         		printf("applying missing value to: %s", buffer);
+@@ -1622,55 +2022,7 @@
+ 	}
+ }
+ 
+-void RNC_SetupPSDVariables( int ncid, int radar, RNC_DimensionStruct *dimensions, int PSD_varid[] )
+-{
+-        int     variable_shape[3];
+-        int     status;
+-
+-        variable_shape[0] = dimensions->time_dim;
+-        variable_shape[1] = dimensions->range_dim;
+-	variable_shape[2] = dimensions->fft_bin_dim;
+-	
+-	switch(radar)
+-	{
+-		case COPERNICUS_SPECTRA :
+-		{
+-			status = nc_def_var( ncid, "PSD_H", NC_SHORT, 3, variable_shape, &PSD_varid[0]);
+-        		if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			status = nc_def_var( ncid, "PSD_V", NC_FLOAT, 3, variable_shape, &PSD_varid[1]);
+-        		if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			status = nc_def_var( ncid, "PSD_XH", NC_FLOAT, 3, variable_shape, &PSD_varid[2]);
+-        		if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			status = nc_def_var( ncid, "PSD_XV", NC_FLOAT, 3, variable_shape, &PSD_varid[3]);
+-        		if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			break;
+-		}
+-		case COPERNICUS_CODED_SPECTRA :
+-		{
+-			status = nc_def_var( ncid, "PSD_HH", NC_FLOAT, 3, variable_shape, &PSD_varid[0]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_HV", NC_FLOAT, 3, variable_shape, &PSD_varid[1]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_HHP", NC_FLOAT, 3, variable_shape, &PSD_varid[2]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_HVP", NC_FLOAT, 3, variable_shape, &PSD_varid[3]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			break;
+-		}
+-		case ACROBAT_CODED_SPECTRA :
+-		{
+-                        status = nc_def_var( ncid, "PSD_HH", NC_FLOAT, 3, variable_shape, &PSD_varid[0]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                }	
+-		case GALILEO_SPECTRA :
+-                {
+-                        status = nc_def_var( ncid, "PSD_HH", NC_FLOAT, 3, variable_shape, &PSD_varid[0]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                }
+-	}
+-}
+-
+-void RNC_SetupLogPSDVariables( int ncid, int radar, RNC_DimensionStruct *dimensions, int PSD_varid[] )
++void RNC_SetupLogPSDVariables( int ncid, int radar, RSP_ParamStruct *param, RNC_DimensionStruct *dimensions, int PSD_varid[] )
+ {
+         int     variable_shape[4];
+         int     status;
+@@ -1681,51 +2033,76 @@
+ 
+         switch(radar)
+         {
+-                case COPERNICUS_SPECTRA :
+-                {
+-                        status = nc_def_var( ncid, "PSD_H", NC_SHORT, 3, variable_shape, &PSD_varid[0]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_V", NC_SHORT, 3, variable_shape, &PSD_varid[1]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_XH", NC_SHORT, 3, variable_shape, &PSD_varid[2]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_XV", NC_SHORT, 3, variable_shape, &PSD_varid[3]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        break;
+-                }
+                 case COPERNICUS_CODED_SPECTRA :
+                 {
+-			
+-                        status = nc_def_var( ncid, "PSD_HH", NC_SHORT, 3, variable_shape, &PSD_varid[0]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_HV", NC_SHORT, 3, variable_shape, &PSD_varid[1]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_HHP", NC_SHORT, 3, variable_shape, &PSD_varid[2]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "PSD_HVP", NC_SHORT, 3, variable_shape, &PSD_varid[3]);
+-			variable_shape[1] = dimensions->spectra_number_dim;
+-			variable_shape[2] = dimensions->fft_bin_dim;
+-		        variable_shape[3] = dimensions->range_dim;
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			status = nc_def_var( ncid, "IPF_HH", NC_SHORT, 4, variable_shape, &PSD_varid[4]);
++                        status = nc_def_var( ncid, "PSD_HH", NC_SHORT, 3, variable_shape, &PSD_varid[PSD_HH]);
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "IPF_HV", NC_SHORT, 4, variable_shape, &PSD_varid[5]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			variable_shape[2] = dimensions->coded_fft_bin_dim;
+-                        status = nc_def_var( ncid, "IPF_HHP", NC_LONG, 4, variable_shape, &PSD_varid[6]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "IPF_HVP", NC_LONG, 4, variable_shape, &PSD_varid[7]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			variable_shape[2] = dimensions->fft_bin_dim;	
+-                        status = nc_def_var( ncid, "QPF_HH", NC_SHORT, 4, variable_shape, &PSD_varid[8]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "QPF_HV", NC_SHORT, 4, variable_shape, &PSD_varid[9]);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-			variable_shape[2] = dimensions->coded_fft_bin_dim;
+-                        status = nc_def_var( ncid, "QPF_HHP", NC_LONG, 4, variable_shape, &PSD_varid[10]);
++                        status = nc_def_var( ncid, "PSD_HV", NC_SHORT, 3, variable_shape, &PSD_varid[PSD_HV]);
++			if (param->num_tx_pol == 2) {
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++				status = nc_def_var( ncid, "PSD_VV", NC_SHORT, 3, variable_shape, &PSD_varid[PSD_VV]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        	status = nc_def_var( ncid, "PSD_VH", NC_SHORT, 3, variable_shape, &PSD_varid[PSD_VH]);
++			}
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                        status = nc_def_var( ncid, "QPF_HVP", NC_LONG, 4, variable_shape, &PSD_varid[11]);
++                        status = nc_def_var( ncid, "PSD_HHP", NC_SHORT, 3, variable_shape, &PSD_varid[PSD_HHP]);
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        status = nc_def_var( ncid, "PSD_HVP", NC_SHORT, 3, variable_shape, &PSD_varid[PSD_HVP]);
++			if (param->num_tx_pol == 2) {
++				if (status != NC_NOERR) check_netcdf_handle_error(status);
++				status = nc_def_var( ncid, "PSD_VVP", NC_SHORT, 3, variable_shape, &PSD_varid[PSD_VVP]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        	status = nc_def_var( ncid, "PSD_VHP", NC_SHORT, 3, variable_shape, &PSD_varid[PSD_VHP]);
++			}
++			if (param->include_iq_in_spectra == 1)
++			{
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++				variable_shape[1] = dimensions->spectra_number_dim;
++				variable_shape[2] = dimensions->fft_bin_dim;
++		        	variable_shape[3] = dimensions->range_dim;
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++				status = nc_def_var( ncid, "IPF_HH", NC_SHORT, 4, variable_shape, &PSD_varid[IPF_HH]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        	status = nc_def_var( ncid, "IPF_HV", NC_SHORT, 4, variable_shape, &PSD_varid[IPF_HV]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++				variable_shape[2] = dimensions->coded_fft_bin_dim;
++                        	status = nc_def_var( ncid, "IPF_HHP", NC_LONG, 4, variable_shape, &PSD_varid[IPF_HHP]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        	status = nc_def_var( ncid, "IPF_HVP", NC_LONG, 4, variable_shape, &PSD_varid[IPF_HVP]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++				variable_shape[2] = dimensions->fft_bin_dim;	
++                        	status = nc_def_var( ncid, "QPF_HH", NC_SHORT, 4, variable_shape, &PSD_varid[QPF_HH]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        	status = nc_def_var( ncid, "QPF_HV", NC_SHORT, 4, variable_shape, &PSD_varid[QPF_HV]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++				variable_shape[2] = dimensions->coded_fft_bin_dim;
++                        	status = nc_def_var( ncid, "QPF_HHP", NC_LONG, 4, variable_shape, &PSD_varid[QPF_HHP]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        	status = nc_def_var( ncid, "QPF_HVP", NC_LONG, 4, variable_shape, &PSD_varid[QPF_HVP]);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++				if (param->num_tx_pol == 2) {
++					variable_shape[2] = dimensions->fft_bin_dim;
++					status = nc_def_var( ncid, "IPF_VV", NC_SHORT, 4, variable_shape, &PSD_varid[IPF_VV]);
++                                        if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        status = nc_def_var( ncid, "IPF_VH", NC_SHORT, 4, variable_shape, &PSD_varid[IPF_VH]);
++					variable_shape[2] = dimensions->coded_fft_bin_dim;
++                                        if (status != NC_NOERR) check_netcdf_handle_error(status);
++					status = nc_def_var( ncid, "IPF_VVP", NC_LONG, 4, variable_shape, &PSD_varid[IPF_VVP]);
++                                        if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        status = nc_def_var( ncid, "IPF_VHP", NC_LONG, 4, variable_shape, &PSD_varid[IPF_VHP]);
++					variable_shape[2] = dimensions->fft_bin_dim;
++                                        if (status != NC_NOERR) check_netcdf_handle_error(status);
++					status = nc_def_var( ncid, "QPF_VV", NC_SHORT, 4, variable_shape, &PSD_varid[QPF_VV]);
++                                        if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                        status = nc_def_var( ncid, "QPF_VH", NC_SHORT, 4, variable_shape, &PSD_varid[QPF_VH]);
++					variable_shape[2] = dimensions->coded_fft_bin_dim;
++                                        if (status != NC_NOERR) check_netcdf_handle_error(status);
++					status = nc_def_var( ncid, "QPF_VVP", NC_LONG, 4, variable_shape, &PSD_varid[QPF_VVP]);
++                        		if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        		status = nc_def_var( ncid, "QPF_VHP", NC_LONG, 4, variable_shape, &PSD_varid[QPF_VHP]);
++                        		if (status != NC_NOERR) check_netcdf_handle_error(status);
++				}
++			}
+                         break;
+                 }
+ 		case COPERNICUS_SPECTRA_RAPID :
+@@ -1734,6 +2111,8 @@
+                         variable_shape[1] = dimensions->fft_bin_dim;
+                         status = nc_def_var( ncid, "PSD_RAPID_HHP", NC_SHORT, 2, variable_shape, &PSD_varid[0]);
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
++                        status = nc_def_var( ncid, "PSD_RAPID_HH", NC_SHORT, 2, variable_shape, &PSD_varid[1]);
++                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 			break;
+                 }
+                 case ACROBAT_CODED_SPECTRA :
+@@ -1743,6 +2122,7 @@
+ 			break;
+                 }
+                 case GALILEO_SPECTRA :
++		case TEST_SPECTRA :
+                 {
+                         status = nc_def_var( ncid, "PSD_HH", NC_SHORT, 3, variable_shape, &PSD_varid[0]);
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
+@@ -1756,6 +2136,7 @@
+ 			break;
+                 }
+ 		case GALILEO_SPECTRA_RAPID :
++		case TEST_SPECTRA_RAPID :
+ 		{
+ 			variable_shape[0] = dimensions->time_dim;
+ 		        variable_shape[1] = dimensions->fft_bin_dim;
+@@ -1813,122 +2194,6 @@
+         obs->ray_number = obs->ray_number + 1; 
+ }
+ 
+-void RNC_WritePSDVariables( int ncid, int radar, RSP_ParamStruct *param, RSP_ObservablesStruct *obs, PolPSDStruct PSD[], int PSD_varid[] )
+-{
+-        int     variable_count[3];
+-        int     variable_start[3];
+-        int     status;
+-        int     n;
+-	float 	temp_float;
+-
+-	variable_start[0] = obs->PSD_ray_number;
+-	variable_start[1] = 0;
+-	variable_start[2] = 0;
+-
+-	variable_count[0] = 1;
+-        variable_count[1] = 1;	
+- 	variable_count[2] = param->npsd;
+-
+-        /* write time */
+-        temp_float =  ((float) obs->hour * 3600.) + ((float) obs->minute * 60.) + ((float) obs->second) + ((float) obs->centisecond/100);
+-        status = nc_put_var1_float( ncid, obs->tsid, variable_start, &temp_float);
+-        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-
+-        /* write elevation */
+-        status = nc_put_var1_float( ncid, obs->elevationid, variable_start, &obs->elevation );
+-        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-
+-        /* write azimuth */
+-        temp_float = obs->azimuth + param->azimuth_offset;
+-        status = nc_put_var1_float( ncid, obs->azimuthid, variable_start, &temp_float );
+-        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-
+-	switch(radar)
+-	{
+-		case COPERNICUS_SPECTRA :
+-		{
+-		for(n = 0; n < param->samples_per_pulse; n++)
+-        	{
+-			variable_start[1] = n;
+-			status = nc_put_vara_float( ncid, PSD_varid[0], variable_start, variable_count, PSD[n].HH);
+-                	if (status != NC_NOERR) check_netcdf_handle_error(status);
+-		}
+-		for(n = 0; n < param->samples_per_pulse; n++)
+-        	{
+-                	variable_start[1] = n;
+-                	status = nc_put_vara_float( ncid, PSD_varid[1], variable_start, variable_count, PSD[n].VV);
+-                	if (status != NC_NOERR) check_netcdf_handle_error(status);
+-        	}
+-		for(n = 0; n < param->samples_per_pulse; n++)
+-        	{
+-                	variable_start[1] = n;
+-                	status = nc_put_vara_float( ncid, PSD_varid[2], variable_start, variable_count, PSD[n].HV);
+-                	if (status != NC_NOERR) check_netcdf_handle_error(status);
+-        	}
+-		for(n = 0; n < param->samples_per_pulse; n++)
+-        	{
+-                	variable_start[1] = n;
+-                	status = nc_put_vara_float( ncid, PSD_varid[3], variable_start, variable_count, PSD[n].VH);
+-                	if (status != NC_NOERR) check_netcdf_handle_error(status);
+-        	}
+-		break;
+-		}
+-		case COPERNICUS_CODED_SPECTRA :
+-		{
+-		for(n = 0; n < param->samples_per_pulse; n++)
+-                {
+-                        variable_start[1] = n;
+-                        status = nc_put_vara_float( ncid, PSD_varid[0], variable_start, variable_count, PSD[n].HH);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                }
+-                for(n = 0; n < param->samples_per_pulse; n++)
+-                {
+-                        variable_start[1] = n;
+-                        status = nc_put_vara_float( ncid, PSD_varid[1], variable_start, variable_count, PSD[n].HV);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                }
+-                for(n = 0; n < param->samples_per_pulse; n++)
+-                {
+-                        variable_start[1] = n;
+-                        status = nc_put_vara_float( ncid, PSD_varid[2], variable_start, variable_count, PSD[n].HHP);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                }
+-                for(n = 0; n < param->samples_per_pulse; n++)
+-                {
+-                        variable_start[1] = n;
+-                        status = nc_put_vara_float( ncid, PSD_varid[3], variable_start, variable_count, PSD[n].HVP);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                }
+-                break;
+-                }
+-		case ACROBAT_CODED_SPECTRA :
+-                {
+-                for(n = 0; n < param->samples_per_pulse; n++)
+-                {
+-                        variable_start[1] = n;
+-                        status = nc_put_vara_float( ncid, PSD_varid[0], variable_start, variable_count, PSD[n].HH);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                }
+-                break;
+-		}
+-		case GALILEO_SPECTRA :
+-                {
+-                for(n = 0; n < param->samples_per_pulse; n++)
+-                {
+-                        variable_start[1] = n;
+-                        status = nc_put_vara_float( ncid, PSD_varid[0], variable_start, variable_count, PSD[n].HH);
+-                        if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                }
+-                break;
+-
+-                }
+-
+-
+-	}
+-
+-	obs->PSD_ray_number = obs->PSD_ray_number + 1;
+-}
+-
+ void RNC_WriteLogPSDVariables( int ncid, int radar, RSP_ParamStruct *param, RSP_ObservablesStruct *obs, PolPSDStruct PSD[], IQStruct *IQStruct, int PSD_varid[] )
+ {
+         int     variable_count[4];
+@@ -1974,41 +2239,84 @@
+         {
+                 case COPERNICUS_CODED_SPECTRA :
+                 {
+-		/* write out IQ data first for all gates in one go */
+-		variable_count[1] = param->spectra_averaged;
+-		variable_count[2] = param->npsd;
+-		variable_count[3] = param->samples_per_pulse;
+-		/* write out IPF_HH */
+-		status = nc_put_vara_short( ncid, PSD_varid[4], variable_start, variable_count, IQStruct->I_raw_copolar);
+-		if (status != NC_NOERR) check_netcdf_handle_error(status);	
+-		/* write out IPF_HV */
+-		status = nc_put_vara_short( ncid, PSD_varid[5], variable_start, variable_count, IQStruct->I_raw_crosspolar);
+-                if (status != NC_NOERR) check_netcdf_handle_error(status);
+-		/* write out IPF_HHP */
+-		variable_count[2] = param->npsd/param->num_interleave;
+-                status = nc_put_vara_long( ncid, PSD_varid[6], variable_start, variable_count, IQStruct->I_coded_copolar);
+-                if (status != NC_NOERR) check_netcdf_handle_error(status);
+-		/* write out IPF_HVP */
+-                status = nc_put_vara_long( ncid, PSD_varid[7], variable_start, variable_count, IQStruct->I_coded_crosspolar);
+-                if (status != NC_NOERR) check_netcdf_handle_error(status);		
+-		/* write out QPF_HH */
+-		variable_count[2] = param->npsd;
+-                status = nc_put_vara_short( ncid, PSD_varid[8], variable_start, variable_count, IQStruct->Q_raw_copolar);
+-                if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                /* write out QPF_HV */
+-                status = nc_put_vara_short( ncid, PSD_varid[9], variable_start, variable_count, IQStruct->Q_raw_crosspolar);
+-                if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                /* write out QPF_HHP */
+-		variable_count[2] = param->npsd/param->num_interleave;
+-                status = nc_put_vara_long( ncid, PSD_varid[10], variable_start, variable_count, IQStruct->Q_coded_copolar);
+-                if (status != NC_NOERR) check_netcdf_handle_error(status);
+-                /* write out QPF_HVP */
+-                status = nc_put_vara_long( ncid, PSD_varid[11], variable_start, variable_count, IQStruct->Q_coded_crosspolar);
+-                if (status != NC_NOERR) check_netcdf_handle_error(status);
+-	
++		if (param->include_iq_in_spectra == 1)
++		{
++			/* write out IQ data first for all gates in one go */
++			variable_count[1] = param->spectra_averaged;
++			variable_count[2] = param->npsd;
++			variable_count[3] = param->samples_per_pulse;
++			printf ("ipf_hh\n");
++			/* write out IPF_HH */
++			status = nc_put_vara_short( ncid, PSD_varid[IPF_HH], variable_start, variable_count, IQStruct->I_uncoded_copolar_H);
++			if (status != NC_NOERR) check_netcdf_handle_error(status);	
++			 printf ("ipf_hv\n");
++			/* write out IPF_HV */
++			status = nc_put_vara_short( ncid, PSD_varid[IPF_HV], variable_start, variable_count, IQStruct->I_uncoded_crosspolar_H);
++               	 	if (status != NC_NOERR) check_netcdf_handle_error(status);
++			variable_count[2] = param->npsd/param->num_interleave;
++			 printf ("ipf_hhp\n");
++			/* write out IPF_HHP */
++	                status = nc_put_vara_long( ncid, PSD_varid[IPF_HHP], variable_start, variable_count, IQStruct->I_coded_copolar_H);
++	                if (status != NC_NOERR) check_netcdf_handle_error(status);
++			printf ("ipf_hvp\n");
++			/* write out IPF_HVP */
++	                status = nc_put_vara_long( ncid, PSD_varid[IPF_HVP], variable_start, variable_count, IQStruct->I_coded_crosspolar_H);
++	                if (status != NC_NOERR) check_netcdf_handle_error(status);		
++			variable_count[2] = param->npsd;
++			printf ("qpf_hh\n");
++			/* write out QPF_HH */
++	                status = nc_put_vara_short( ncid, PSD_varid[QPF_HH], variable_start, variable_count, IQStruct->Q_uncoded_copolar_H);
++	                if (status != NC_NOERR) check_netcdf_handle_error(status);
++			printf ("qpf_hv\n");
++	                /* write out QPF_HV */
++	                status = nc_put_vara_short( ncid, PSD_varid[QPF_HV], variable_start, variable_count, IQStruct->Q_uncoded_crosspolar_H);
++	                if (status != NC_NOERR) check_netcdf_handle_error(status);
++			variable_count[2] = param->npsd/param->num_interleave;
++			printf ("qpf_hhp\n");
++	                /* write out QPF_HHP */
++	                status = nc_put_vara_long( ncid, PSD_varid[QPF_HHP], variable_start, variable_count, IQStruct->Q_coded_copolar_H);
++	                if (status != NC_NOERR) check_netcdf_handle_error(status);
++			printf ("ipf_hvp\n");
++	                /* write out QPF_HVP */
++	                status = nc_put_vara_long( ncid, PSD_varid[QPF_HVP], variable_start, variable_count, IQStruct->Q_coded_crosspolar_H);
++	                if (status != NC_NOERR) check_netcdf_handle_error(status);
++			printf("we are done with i and q dump\n");
++			if (param->num_tx_pol == 2) {
++				variable_count[2] = param->npsd;
++				/* write out IPF_VV */
++                                status = nc_put_vara_short( ncid, PSD_varid[IPF_VV], variable_start, variable_count, IQStruct->I_uncoded_copolar_V);
++                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                /* write out IPF_VH */
++                                status = nc_put_vara_short( ncid, PSD_varid[IPF_VH], variable_start, variable_count, IQStruct->I_uncoded_crosspolar_V);
++                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++				variable_count[2] = param->npsd/param->num_interleave;
++				/* write out IPF_VVP */
++                                status = nc_put_vara_long( ncid, PSD_varid[IPF_VVP], variable_start, variable_count, IQStruct->I_coded_copolar_V);
++                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                /* write out IPF_VHP */
++                                status = nc_put_vara_long( ncid, PSD_varid[IPF_VHP], variable_start, variable_count, IQStruct->I_coded_crosspolar_V);
++                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++				variable_count[2] = param->npsd;
++				/* write out QPF_VV */
++                                status = nc_put_vara_short( ncid, PSD_varid[QPF_VV], variable_start, variable_count, IQStruct->Q_uncoded_copolar_V);
++                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++                                /* write out QPF_VH */
++                                status = nc_put_vara_short( ncid, PSD_varid[QPF_VH], variable_start, variable_count, IQStruct->Q_uncoded_crosspolar_V);
++                                if (status != NC_NOERR) check_netcdf_handle_error(status);
++				variable_count[2] = param->npsd/param->num_interleave;
++				/* write out QPF_VVP */
++	                	status = nc_put_vara_long( ncid, PSD_varid[QPF_VVP], variable_start, variable_count, IQStruct->Q_coded_copolar_V);
++	                	if (status != NC_NOERR) check_netcdf_handle_error(status);
++	                	/* write out QPF_VHP */
++	                	status = nc_put_vara_long( ncid, PSD_varid[QPF_VHP], variable_start, variable_count, IQStruct->Q_coded_crosspolar_V);
++	                	if (status != NC_NOERR) check_netcdf_handle_error(status);
++			}
++		}
++		
+ 		/* one gate at a time */	
+ 		variable_count[1] = 1;
+ 		variable_count[2] = param->npsd;
++		/* PSD_HH */
+                 for(n = 0; n < param->samples_per_pulse; n++)
+                 {
+ 			/* calculate the log10 of the PSD */
+@@ -2016,9 +2324,10 @@
+ 				log_psd[j] = (short int) 1000 * log10( PSD[n].HH[j] );
+ 			}
+                         variable_start[1] = n;
+-                        status = nc_put_vara_short( ncid, PSD_varid[0], variable_start, variable_count, log_psd);
++                        status = nc_put_vara_short( ncid, PSD_varid[PSD_HH], variable_start, variable_count, log_psd);
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
+                 }
++		/* PSD_HV */
+                 for(n = 0; n < param->samples_per_pulse; n++)
+                 {
+ 			/* calculate the log10 of the PSD */
+@@ -2027,9 +2336,34 @@
+                         }
+ 
+                         variable_start[1] = n;
+-                        status = nc_put_vara_short( ncid, PSD_varid[1], variable_start, variable_count, log_psd);
++                        status = nc_put_vara_short( ncid, PSD_varid[PSD_HV], variable_start, variable_count, log_psd);
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
+                 }
++		if (param->num_tx_pol == 2) {
++			/* PSD_VV */
++			for(n = 0; n < param->samples_per_pulse; n++)
++                	{
++                	        /* calculate the log10 of the PSD */
++                	        for( j = 0; j < param->npsd; j++) {
++                	                log_psd[j] = (short int) 1000 * log10( PSD[n].VV[j] );
++                	        }
++                	        variable_start[1] = n;
++                	        status = nc_put_vara_short( ncid, PSD_varid[2], variable_start, variable_count, log_psd);
++                	        if (status != NC_NOERR) check_netcdf_handle_error(status);
++                	}
++			/* PSD_VH */
++                	for(n = 0; n < param->samples_per_pulse; n++)
++                	{
++                	        /* calculate the log10 of the PSD */
++                	        for( j = 0; j < param->npsd; j++) {
++                	                log_psd[j] = (short int) 1000 * log10( PSD[n].VH[j] );
++                	        }
++                	        variable_start[1] = n;
++                	        status = nc_put_vara_short( ncid, PSD_varid[PSD_VV], variable_start, variable_count, log_psd);
++                	        if (status != NC_NOERR) check_netcdf_handle_error(status);
++                	}
++		}
++		/* PSD_HHP */
+                 for(n = 0; n < param->samples_per_pulse; n++)
+                 {
+ 			/* calculate the log10 of the PSD */
+@@ -2037,9 +2371,10 @@
+                                 log_psd[j] = (short int) 1000 * log10( PSD[n].HHP[j] );
+                         }
+                         variable_start[1] = n;
+-                        status = nc_put_vara_short( ncid, PSD_varid[2], variable_start, variable_count, log_psd);
++                        status = nc_put_vara_short( ncid, PSD_varid[PSD_HHP], variable_start, variable_count, log_psd);
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
+                 }
++		/* PSD_HVP */
+ 		for(n = 0; n < param->samples_per_pulse; n++)
+                 {
+ 			/* calculate the log10 of the PSD */
+@@ -2047,10 +2382,34 @@
+                                 log_psd[j] = (short int) 1000 * log10( PSD[n].HVP[j] );
+                         }
+                         variable_start[1] = n;
+-                        status = nc_put_vara_short( ncid, PSD_varid[3], variable_start, variable_count, log_psd);
++                        status = nc_put_vara_short( ncid, PSD_varid[PSD_HVP], variable_start, variable_count, log_psd);
+                         if (status != NC_NOERR) check_netcdf_handle_error(status);
+                 }
+-                break;
++		if (param->num_tx_pol == 2) {
++			/* PSD_VVP */
++			for(n = 0; n < param->samples_per_pulse; n++)
++                	{
++                        	/* calculate the log10 of the PSD */
++                        	for( j = 0; j < param->npsd; j++) {
++                        	        log_psd[j] = (short int) 1000 * log10( PSD[n].VVP[j] );
++                        	}
++                        	variable_start[1] = n;
++                        	status = nc_put_vara_short( ncid, PSD_varid[PSD_VVP], variable_start, variable_count, log_psd);
++                        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++                	}	
++			/* PSD_VHP */
++                	for(n = 0; n < param->samples_per_pulse; n++)
++                	{
++                	        /* calculate the log10 of the PSD */
++                	        for( j = 0; j < param->npsd; j++) {
++                	                log_psd[j] = (short int) 1000 * log10( PSD[n].VHP[j] );
++                	        }
++                	        variable_start[1] = n;
++                	        status = nc_put_vara_short( ncid, PSD_varid[PSD_VHP], variable_start, variable_count, log_psd);
++                	        if (status != NC_NOERR) check_netcdf_handle_error(status);
++                	}
++		}		
++               break;
+                 }
+                 case ACROBAT_CODED_SPECTRA :
+                 {
+@@ -2067,6 +2426,7 @@
+                 break;
+ 		}
+ 		case GALILEO_SPECTRA :
++		case TEST_SPECTRA :
+                 {
+ 		/* write out IQ data first for all gates in one go */
+ 		variable_start[0] = obs->PSD_ray_number;
+@@ -2078,7 +2438,7 @@
+                 variable_count[2] = param->npsd;
+                 variable_count[3] = param->samples_per_pulse;
+ 		/* write out IPF_HH */
+-                status = nc_put_vara_short( ncid, PSD_varid[1], variable_start, variable_count, (IQStruct->I_raw_copolar));
++                status = nc_put_vara_short( ncid, PSD_varid[1], (const size_t *) variable_start, (const size_t *) variable_count, (IQStruct->I_raw_copolar));
+                 if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 		/* write out QPF_HH */
+                 status = nc_put_vara_short( ncid, PSD_varid[2], variable_start, variable_count, (IQStruct->Q_raw_copolar));	
+@@ -2121,6 +2481,7 @@
+         float   timestamp;
+ 	float 	azimuth;
+         short int       *log_psd;
++	short int	*log_psd_coded;
+ 	int	temp_int = 0;
+ 	int	save_data = 0;
+ 	int	saved_ray = 0;
+@@ -2136,6 +2497,13 @@
+                 printf("memory request for log_psd failed\n");
+                 exit(-1);
+         }
++	/* create a short integer array to allow the results of log10 to be stored */
++        log_psd_coded = (short int *)calloc( param->npsd, sizeof(short int));
++        if (log_psd_coded == NULL) {
++                printf("memory request for log_psd_coded failed\n");
++                exit(-1);
++        }
++
+ 
+         /* calculate time */
+         timestamp =  ((float) obs->hour * 3600.) + ((float) obs->minute * 60.) + ((float) obs->second) + ((float) obs->centisecond/100);
+@@ -2144,14 +2512,16 @@
+         azimuth = obs->azimuth + param->azimuth_offset;
+ 
+ 	/* start point of copernicus fft */
+-	if ( radar == GALILEO_SPECTRA_RAPID ) {
++	if ( radar == GALILEO_SPECTRA_RAPID || radar == TEST_SPECTRA_RAPID ) {
+ 		temp_int = 0;
+ 		variable_count[1] = param->npsd;
+ 		start_bin = 6;
+ 		noise_bin = 0;
+ 	} else if ( radar == COPERNICUS_SPECTRA_RAPID ) {
+ 		temp_int = 0;
+-		variable_count[1] = param->npsd/2;
++		/* since I am dumping out the spectra for a range bin */
++		/* can I make the */
++		variable_count[1] = param->npsd;
+ 		start_bin = 26;
+ 		noise_bin = 469;
+ 	}
+@@ -2160,11 +2530,12 @@
+         {
+ 		case COPERNICUS_SPECTRA_RAPID :
+ 		case GALILEO_SPECTRA_RAPID :
++		case TEST_SPECTRA_RAPID :
+                 {
+ 	                for(n = 0; n < param->samples_per_pulse; n++)
+         	        {
+ 				save_data = 0;
+-				if ( radar == GALILEO_SPECTRA_RAPID ) {
++				if ( radar == GALILEO_SPECTRA_RAPID || radar == TEST_SPECTRA_RAPID ) {
+ 					for( j = 0; j < param->npsd; j++) {
+                                                 log_psd[j] = (short int) 1000 * log10( PSD[n].HH[j] );
+                                                	if (log_psd[j] > 5000) {
+@@ -2186,8 +2557,9 @@
+                                         }
+ 				} else if (radar == COPERNICUS_SPECTRA_RAPID ) {
+                                        	for( j = 0; j < param->npsd; j++) {
+-                                               	log_psd[j] = (short int) 1000 * log10( PSD[n].HHP[j] );
+-						if (log_psd[j] > 4700) {
++                                               	log_psd_coded[j] = (short int) 1000 * log10( PSD[n].HHP[j] );
++                                               	log_psd[j] = (short int) 1000 * log10( PSD[n].HH[j] );
++						if (log_psd_coded[j] > 4700) {
+ 							if ( n >= start_bin ) {
+ 								save_data = 1;
+ 							}
+@@ -2219,7 +2591,9 @@
+                                	 	status = nc_put_var1_int( ncid, obs->bin_numberid, variable_start, &n );
+                                 	if (status != NC_NOERR) check_netcdf_handle_error(status);
+         	                	/* write out fft for this ray */
+-					status = nc_put_vara_short( ncid, PSD_varid[0], variable_start, variable_count, &log_psd[temp_int]);
++					status = nc_put_vara_short( ncid, PSD_varid[0], variable_start, variable_count, &log_psd_coded[temp_int]);
++                	        	if (status != NC_NOERR) check_netcdf_handle_error(status);
++					status = nc_put_vara_short( ncid, PSD_varid[1], variable_start, variable_count, &log_psd[temp_int]);
+                 	        	if (status != NC_NOERR) check_netcdf_handle_error(status);
+ 					obs->bin_ray_number = obs->bin_ray_number + 1;
+ 					saved_ray = 1;
+@@ -2234,6 +2608,7 @@
+ 		obs->ray_number = obs->ray_number + 1;
+ 	}
+         free(log_psd);
++	free(log_psd_coded);
+ 
+         status = nc_sync(ncid);
+         if (status != NC_NOERR) check_netcdf_handle_error(status);

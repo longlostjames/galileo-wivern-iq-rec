@@ -1,0 +1,182 @@
+// RSP.h
+// General header file for the Radar Signal Processing Package.
+// Contains definitions required by more than one module.
+
+#include<fftw3.h>
+
+#ifndef __RSP_H
+#define __RSP_H
+
+// Define useful constants
+#define SPEED_LIGHT 299792458
+#define PI 3.141592654
+#define TWOPI 6.283185307
+#define RAD2DEG 57.29577951
+
+// Blackman Window
+#define BLACKMAN_WINDOW(j,N) .42-.5*cos(TWOPI*j/N)+0.08*cos(2*TWOPI*j/N);
+
+// The RSP_PeakStruct type definition defines the structure used to store
+// information about spectral peaks.
+typedef struct {
+  int peakBin;    // Bin no. of spectral peak
+  int leftBin;    // Bin no. of left edge of peak
+  int rightBin;   // Bin no. of right edge of peak
+  float peakPSD;  // Peak linear PSD value
+} RSP_PeakStruct;
+
+// The RSP_ParamStruct type definition defines the structure used to store
+// basic operating parameters of the radar.
+// Parameters marked + must be set by the main program; others are calculated by
+// the RSP_InitialiseParams module.
+typedef struct {
+  float frequency;                // + Radar frequency (GHz)
+  float prf;                      // + Pulse repetition frequency (Hz)
+  float prt;                      //   Pulse repetition time (s)
+  float pulse_period;             // + Duration of TX pulse or subpulse (microsec)
+  int pulses_per_daq_cycle;       // + Number of pulses collected by ADC per ray
+  int samples_per_pulse;          // + Number of samples collected per pulse
+  int clock_divfactor;            // + The sample clock divide factor
+  int delay_clocks;                // + The number of ADC delay clock cycles
+  int ADC_channels;     // + Number of ADC channels to use
+  int pulses_coherently_averaged; // + Number of pulses coherently averaged
+  int spectra_averaged;           // + Number of spectra averaged
+  int moments_averaged;           // + Number of moments to average (if required)
+  int nfft;                       //   Number of points per fft
+  int npsd;                       //   Number of bins in PSD
+  int code_length;                // + Number of bits per pulse code (1 = no coding)
+  int number_of_codes;            // + Number of complementary codes (1 = no complementary codes)
+  float frequency_bin_width;      //   Width of FFT frequency bins (Hz)
+  float hz_per_mps;               //   Doppler frequency per m/s (Hz)
+  float *frequency_axis;          //   PSD frequency axis (Hz)
+  float *velocity_axis;           //   PSD velocity axis (m/s)
+  float folding_velocity;         //   Nyquist folding velocity (m/s)
+  float folding_frequency;        //   Nyquist folding frequency (Hz)
+  float range_gate_width;         //   Width of range gates (m)
+  float range_resolution;         //   Range resolution (m)
+  float *range;                   //   Distance to centre of each range gate (m)
+  float range_offset;             // + Distance to centre of first range gate (m)
+  float dwell_time;               //   Total length of dwell, inc. all averaging (s)
+  float daq_time;                 //   Time for one DAQ cycle (s)
+  float clock;                    // + Clock input to DAQ cards (Hz)
+  float sample_frequency;         //   Sample frequency (Hz) after clock division
+  float sample_period;            //   Sample period (s) after clock division
+  float *window;                  //   FFT window of length nfft
+  float Wss;                      //   Window Squared and Summed (for fft)
+  int fft_bins_interpolated;      // + Number of bins either side of 0 to interpolate over
+  int oversample_ratio;           //   Ratio of sampling period to pulse (chip) duration
+  short codes[32][32];            // + Pulse code data
+  float ZED_calibration_offset;   // + Reflectivity calibration offset
+  float ZDR_calibration_offset;	  // + Differential reflectivity calibration offset
+  float LDR_calibration_offset;	  // + Linear depolarisation ratio calibration offset
+  float ZED_incoherent_calibration_offset; // + Incoherent reflectivity calibration offset
+  float ZED_crosspolar_incoherent_calibration_offset; // + Crosspolar incoherent reflectivity calibration offset
+  float ZED_incoherent_noise;     // + Incoherent channel mean noise level
+  float *range_correction;        //   Range correction factor
+  float azimuth_offset;           // + Beam azimuth offset relative to prime focus beam
+  char  code_name[255];           //   The name of the code 
+  float transmit_power;           // + TX power (Watts)
+  int   num_peaks;                // + Number of Doppler peaks to process
+  float antenna_diameter;         // + The diameter of the antenna (m)
+  float beamwidthH;		  // + The horizontal beamwidth of the antenna
+  float beamwidthV;		  // + The vertical beamwidth of the antenna
+  float height;			  // + The height of the antenna above OSGB mean sea level
+  int dump_spectra;	  	  // + allows for the dump of spectra every dump_spectra seconds(if 0 then it does not dump spectra) 
+  int dump_spectra_rapid;	  // + allows for the rapid dump of spectra in a similar manner to dump_spectra 
+  int dump_spectra_every;	  // + allows radar-acrobat to dump spectra every so many rays
+  int num_interleave;             // + number of pulse modes interleaved
+  int num_tx_pol;                 // + number of TX polarisations used
+  float mod_pulse_length;         //   the length of the mod pulse (for copernicus only);
+ int   real_time_spectra_display;  // denotes if real time spectra is to be displayed
+} RSP_ParamStruct;
+
+// The RSP_ObservablesStruct structure is used to store the measured parameters
+// for each ray. The pointers and tags should be defined using the
+// RSP_ObsNew function.
+#define MAX_OBSERVABLES 100
+#define MAX_NAME_LENGTH 10
+typedef struct {
+  float azimuth;
+  int   azimuthid;
+  float elevation;
+  int   elevationid;
+  int	bin_numberid;
+  int	ray_numberid;
+  int year,month,day;
+  int hour,minute,second,centisecond;
+  int dish_year,dish_month,dish_day;
+  int dish_hour,dish_minute,dish_second,dish_centisecond;
+  int ts;
+  int tsid;
+  int dish_tsid;
+  int ray_number;
+  int PSD_ray_number;
+  int bin_ray_number;
+  int n_obs;
+  int n_elements[MAX_OBSERVABLES];
+  int varid[MAX_OBSERVABLES];
+  char name[MAX_OBSERVABLES][MAX_NAME_LENGTH];
+  float *data[MAX_OBSERVABLES];
+  int record_observable[MAX_OBSERVABLES];
+} RSP_ObservablesStruct;
+
+
+// Define a complex number type (tried C99 complex.h method, but wouldn't compile)
+typedef struct {
+  float real;                     // Real component of complex number
+  float imag;                     // Imaginary component of complex number
+} RSP_ComplexType;
+
+void RSP_InitialiseParams(RSP_ParamStruct *param);
+
+void RSP_FreeMemory(RSP_ParamStruct param);
+
+void RSP_FindPeaks(float *psd, int nBins, int nPeaks, float noiseLevel,RSP_PeakStruct *peaks);
+
+void RSP_FindPeaksMulti(float *psd, int nBins, int nPeaks, float noiseLevel,RSP_PeakStruct *peaks);
+
+void RSP_FindPeaksMulti_Destructive(float *psd, int nBins, int nPeaks, float noiseLevel, RSP_PeakStruct *peaks);
+
+void RSP_FindEdges(float *psd, int nBins, float noiseLevel, RSP_PeakStruct *peak);
+
+void RSP_CalcSpecMom(float *psd, int nBins, RSP_PeakStruct peak, float noiseLevel, float *moments);
+
+float RSP_BinToVelocity(float bin,RSP_ParamStruct param);
+
+float RSP_CalcNoisePower(float noiseLevel, RSP_PeakStruct peak, RSP_ParamStruct param);
+
+void RSP_CalcPSD(RSP_ComplexType *IQ, int nfft, float *window, float *psd, float norm);
+
+void RSP_CalcPSD_FFTW(fftw_complex *in, int nfft, fftw_plan p, float *window, float *psd, float norm);
+
+void RSP_SubtractOffset(RSP_ComplexType *IQ, int nfft);
+
+void RSP_SubtractOffset_FFTW(fftw_complex *IQ, int nfft);
+
+void RSP_FFT(float data[], unsigned long nn, int isign);
+
+void RSP_FFT2PowerSpec(float *data, float *PSD, int nfft, float norm);
+
+void RSP_FFT2PowerSpec_FFTW(fftw_complex *data, float *PSD, int nfft, float norm);
+
+void RSP_Correlate(short int *data, short int *code, short int samples, short int bits, long int *corr);
+
+void RSP_Oversample(short int *code, short int *newcode,short int numel,short int n);
+
+void RSP_ClutterInterp(float *PSD, int nBins, int nInterp);
+
+void RSP_CalcPhase(RSP_ComplexType *IQ, float *phi, float *sdphi, int nfft);
+
+void RSP_ObsInit(RSP_ObservablesStruct *obs);
+
+float *RSP_ObsNew(RSP_ObservablesStruct *obs, char *name, int n_elements, int record_observable);
+
+void RSP_ObsFree(RSP_ObservablesStruct *obs);
+
+float *RSP_ObsGet(RSP_ObservablesStruct obs, char *name);
+
+int RSP_ObsIndex(RSP_ObservablesStruct obs, char *name);
+
+void RSP_DisplayParams(RSP_ParamStruct param);
+
+#endif
