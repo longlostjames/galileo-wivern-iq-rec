@@ -24,6 +24,7 @@
 #define NDEBUG
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <fcntl.h>
 #include <math.h>
 #include <time.h>
