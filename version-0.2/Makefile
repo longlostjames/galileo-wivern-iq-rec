@@ -26,16 +26,15 @@ override CFLAGS += -I$(URC_PATH)/RDQ/include
 override CFLAGS += -I$(URC_PATH)/RSP/include
 override CFLAGS += -I$(URC_PATH)/RNC/include
 override CFLAGS += -I$(URC_PATH)/RSM/include
-override CFLAGS += -I$(URC_PATH)/RTS/include
 override CFLAGS += -I$(URC_PATH)/include
 
 EXE=radar-galileo-iq-rec-dualpol
 
 # Universal radar code libraries
 URC_LIBS = $(PATH_RDQ)/librdq12.a $(PATH_RSM)/librsm.a \
-	   $(PATH_RSP)/librsp.a $(PATH_RNC)/librnc.a $(PATH_RTS)/librts.a
+	   $(PATH_RSP)/librsp.a $(PATH_RNC)/librnc.a
 LDFLAGS  = -L $(PATH_RDQ) -L $(PATH_RSM) -L $(PATH_RSP) -L $(PATH_RNC) \
-	   -L $(PATH_RTS) -lrdq12 -lrsm -lrsp -lrnc -lrts
+	    -lrdq12 -lrsm -lrsp -lrnc
 
 
 $(EXE) : radar-galileo-iq-rec-dualpol.o readconf.o median.o $(PATH_RSP)rsp.a $(PATH_RDQ)rdq.a $(PATH_RNC)rnc.a $(PATH_RSM)rsm.a $(PATH_REL)rel.a
