@@ -13,7 +13,8 @@ LIBS= -lm -lpthread -lnetcdf -lfftw3 -ldislin -lX11
 # O3 does as much optimising as it can (trade off, longer compilation time)
 #URC_PATH=/root/universal_radar_code/
 #URC_PATH=/home/chilbolton_software/universal_radar_code/
-URC_PATH=/home/chilbolton_software/radar-galileo/radar-galileo-iq-rec/version-0.2/universal_radar_code/
+#URC_PATH=/home/chilbolton_software/radar-galileo/radar-galileo-iq-rec/version-0.2/universal_radar_code/
+URC_PATH=universal_radar_code
 PATH_RSP=$(URC_PATH)RSP/lib/
 PATH_RDQ=$(URC_PATH)RDQ/lib/
 PATH_RNC=$(URC_PATH)RNC/lib/
