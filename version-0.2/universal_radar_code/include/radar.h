@@ -221,7 +221,7 @@ typedef struct
     uint16_t * I_uncoded_H;
     uint16_t * Q_uncoded_H;
     uint16_t * I_uncoded_V;
-    uint16_t * Q_uncoded_V
+    uint16_t * Q_uncoded_V;
 } IQStruct;
 
 
