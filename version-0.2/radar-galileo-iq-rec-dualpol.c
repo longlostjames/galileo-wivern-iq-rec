@@ -1415,7 +1415,8 @@ int main(int argc, char *argv[])
 		obs.elevation = scan.min_angle;
 	}
 
-	RDQ_StartAcquisition(amcc_fd, dma_bank, dma_banks[dma_bank], tcount);
+	RDQ_StartAcquisition(amcc_fd, dma_bank,
+						 (short *)dma_banks[dma_bank], tcount);
 
 	if (tsdump)
 	{
