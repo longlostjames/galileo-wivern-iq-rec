@@ -75,10 +75,10 @@ typedef struct TimeSeriesObs_t
 	int elevationid;
 	int tsid;
 	int dish_tsid;
-	int ICOHid;
-	int QCOHid;
-	int ICXHid;
-	int QCXHid;
+	int IHid;
+	int QHid;
+	int IVid;
+	int QVid;
 	int TxPower1id;
 	int TxPower2id;
 	int VnotHid;
