@@ -84,10 +84,10 @@ typedef struct TimeSeriesObs_t
 	int VnotHid;
 	int RawLogid;
 
-	uint16_t *ICOH;
-	uint16_t *QCOH;
-	uint16_t *ICXH;
-	uint16_t *QCXH;
+	uint16_t *IH;
+	uint16_t *QH;
+	uint16_t *IV;
+	uint16_t *QV;
 	uint16_t *TxPower1;
 	uint16_t *TxPower2;
 	uint16_t *VnotH;
