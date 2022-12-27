@@ -1043,7 +1043,7 @@ int main(int argc, char *argv[])
 	// Parse command line arguments
 	//------------------------------
 	// overwrite config with command line parameters
-	if (parseargs(argc, argv, &param, &scan, &start_day
+	if (parseargs(argc, argv, &param, &scan, &start_day))
 	{
 		exit(1);
 	}
