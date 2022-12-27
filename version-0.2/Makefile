@@ -60,7 +60,7 @@ help:
 	@echo
 
 
-$(EXE) : radar-galileo-iq-rec.o median.o $(URC_LIBS)
+$(EXE) : radar-galileo-iq-rec-dualpol.o median.o $(URC_LIBS)
 	$(CC) $(CFLAGS) -o $@ radar-galileo-iq-rec-dualpol.o median.o \
 		$(LDFLAGS) $(LIBS)
 
