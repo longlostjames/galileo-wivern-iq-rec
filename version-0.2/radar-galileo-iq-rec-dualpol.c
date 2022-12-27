@@ -62,6 +62,8 @@ char *device = "/dev/ixpio1";
 #include <RDQ.h>   // Include file for the RDQ package
 #include <RNC.h>   // Include file for the RNC package
 #include <RSM.h>   // Include file for the RSM package
+#include <RTS.h>   // Include file for the RTS package
+
 #include "radar-galileo-iq-rec-dualpol.h"
 
 #define RSP_MOMENTS 3 /* Original is 3. Now 5 is also supported. */
