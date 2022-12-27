@@ -1,3 +1,5 @@
+#ifndef _REL_H
+#define _REL_H
 
 /* data structure to hold a translated serial message */
 typedef struct
@@ -13,10 +15,9 @@ typedef struct
         int     centi_sec;
 } REL_SerialMessageStruct;
 
-int REL_InitialiseSerialMessage( char serialport[] );
-
-int REL_ReadSerialMessage ( REL_SerialMessageStruct *serialmessage);
-
-void REL_CloseSerialMessage (void);
+extern int  REL_InitialiseSerialMessage (const char * serialport);
+extern int  REL_ReadSerialMessage       (REL_SerialMessageStruct * serialmessage);
+extern void REL_CloseSerialMessage      (void);
 
 
+#endif /* !_REL_H */

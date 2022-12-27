@@ -1,33 +1,42 @@
-# Makefile for Radar NetCDF Package (RNC)
-# Owain Davies 04/02/2004 
+# Makefile for Radar Serial Message Package (RSM)
+# Chris Walden 20101014
 
 # This is the base path for the package
-ROOTPATH=./
+ROOTPATH=.
 
 # This is where the bits and pieces are kept
-SRCDIR = $(ROOTPATH)src/
-LIBDIR = $(ROOTPATH)lib/
-BINDIR = $(ROOTPATH)bin/
-INCDIR = $(ROOTPATH)include/
+SRCDIR = $(ROOTPATH)/src
+LIBDIR = $(ROOTPATH)/lib
+BINDIR = $(ROOTPATH)/bin
+INCDIR = $(ROOTPATH)/include
 
-CC=gcc
-CFLAGS = -Wall -ffast-math -O3 -I$(INCDIR)
-LIBS= -lm
-
-# The master header file
-INC = $(INCDIR)RSM.h
+CC     = gcc
+CFLAGS = -Wall -O3 -ffast-math -I$(INCDIR)
+LIBS   = -lm -lpthread -lrt
 
 # Top level rule
-all : $(LIBDIR)rsm.a
+all : $(LIBDIR)/librsm.a
+test: $(BINDIR)/RSM_PositionTest
 
 # The main library
-$(LIBDIR)rsm.a : $(BINDIR)RSM_SerialMessage.o 
-	ar r $(LIBDIR)rsm.a $(BINDIR)RSM_SerialMessage.o 
+$(LIBDIR)/librsm.a : $(BINDIR)/RSM_SerialMessage.o $(BINDIR)/RSM_SerialPLC.o \
+		     $(BINDIR)/RSM_NetworkMessage.o
+	ar r $@ $(BINDIR)/RSM_SerialMessage.o $(BINDIR)/RSM_SerialPLC.o \
+		$(BINDIR)/RSM_NetworkMessage.o
 
-$(BINDIR)RSM_SerialMessage.o : $(SRCDIR)RSM_SerialMessage.c $(INC)
-	$(CC) $(CFLAGS) -c $(SRCDIR)RSM_SerialMessage.c -o $(BINDIR)RSM_SerialMessage.o
+$(BINDIR)/RSM_SerialMessage.o : $(SRCDIR)/RSM_SerialMessage.c $(INCDIR)/RSM.h
+	$(CC) $(CFLAGS) -o $@ -c $(SRCDIR)/RSM_SerialMessage.c
+
+$(BINDIR)/RSM_SerialPLC.o : $(SRCDIR)/RSM_SerialPLC.c $(INCDIR)/RSM_SerialPLC.h
+	$(CC) $(CFLAGS) -o $@ -c $(SRCDIR)/RSM_SerialPLC.c
+
+$(BINDIR)/RSM_NetworkMessage.o : $(SRCDIR)/RSM_NetworkMessage.c $(INCDIR)/RSM.h
+	$(CC) $(CFLAGS) -o $@ -c $(SRCDIR)/RSM_NetworkMessage.c
 
 clean :
-	rm -f $(BINDIR)RSM_SerialMessage.o
-	rm -f $(LIBDIR)rsm.a
+	$(RM) $(BINDIR)/*.[doa]
+	$(RM) $(LIBDIR)/*.[doa]
 
+$(BINDIR)/RSM_PositionTest:  $(SRCDIR)/RSM_PositionTest.c $(LIBDIR)/librsm.a
+	$(CC) $(CFLAGS) -o $@ $(SRCDIR)/RSM_PositionTest.c \
+		-L$(LIBDIR) -lrsm $(LIBS)

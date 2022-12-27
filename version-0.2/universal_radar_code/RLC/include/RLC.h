@@ -1,25 +1,24 @@
+#ifndef _RLC_H
+#define _RLC_H
 
-#include "/home/chilbolton_software/universal_radar_code/RSP/include/RSP.h"
+#include <stdbool.h>
+#include <RSP.h>
 
-int RLC_GPIBCommunication( int pad, char *msg, char *reply, int ctrl);
+extern int  RLC_GPIBCommunication    (int pad, const char * msg,
+				      char * reply, bool ctrl);
+extern int  RLC_LecroyErrorCheck     (int pad);
+extern int  RLC_LecroyReset          (int pad);
+extern int  RLC_LecroySelectChannel  (int pad, int channel);
+extern int  RLC_LecroySequenceOn     (int pad);
+extern int  RLC_LecroyUserOn         (int pad);
+extern int  RLC_LecroySyncOn         (int pad);
+extern int  RLC_LecroyOutputOn       (int pad);
+extern int  RLC_LecroyLoadCode       (int pad, int * lecroy_code,
+				      RSP_ParamStruct * param,
+				      int length_lecroy_code,
+				      float vmax, float vmin);
 
-int RLC_LecroyErrorCheck( int serialport_fd ); 
+extern int  RLC_InitialiseSerialPort (const char * serialport);
+extern void RLC_CloseSerialPort      (int serialport);
 
-int RLC_InitialiseSerialPort( char serialport[] );
-
-void RLC_CloseSerialPort (int serialport_fd);
-
-int RLC_LecroyReset( int serialport_fd );
-
-int RLC_LecroySelectChannel( int serialport_fd, int channel );
-
-int RLC_LecroySequenceOn( int serialport_fd );
-
-int RLC_LecroyUserOn( int serialport_fd );
-
-int RLC_LecroySyncOn( int serialport_fd);
-
-int RLC_LecroyOutputOn( int serialport_fd);
-
-int RLC_LecroyLoadCode( int serialport_fd, int *lecroy_code, RSP_ParamStruct *param, int length_lecroy_code, float vmax, float vmin );
-
+#endif /* !_RLC_H */

@@ -1,15 +1,14 @@
 /* a simple test of the clinometer */
 
-
-
 #include <stdio.h>
-#include  "/home/chilbolton_software/universal_radar_code/REL/include/REL.h"
+
+#include <REL.h>
 
 #define SERIALMESSAGE_PORT                 "/dev/ttyS1"
 
 
-int main() 
-{	
+int main()
+{
 	int	temp_int;
 
 	static REL_SerialMessageStruct serialmsg;
@@ -29,7 +28,7 @@ int main()
 	REL_CloseSerialMessage();
 
 	return (0);
-	
+
 
 
 }

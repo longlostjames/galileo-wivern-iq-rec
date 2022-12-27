@@ -1,6 +1,9 @@
+#ifndef _REN_H
+#define _REN_H
 
-int enet_send_gpib_command (int gpib_board, Addr4882_t  instrument, char *buffer);
+#include <ni488.h>
 
-int enet_send_receive_gpib_command (int gpib_board, Addr4882_t  instrument, char *buffer, char *reply);
+extern int enet_send_gpib_command (int gpib_board, Addr4882_t  instrument, const char *buffer);
+extern int enet_send_receive_gpib_command (int gpib_board, Addr4882_t instrument, const char *buffer, char *reply);
 
-
+#endif /* !_REN_H */
