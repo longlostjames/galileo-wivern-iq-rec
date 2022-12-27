@@ -199,6 +199,7 @@ typedef struct
 } PolPSDStruct;
 
 /* this will hold the IQ data for a spectra */
+
 typedef struct
 {
     long int * I_coded_copolar_H;
@@ -217,7 +218,12 @@ typedef struct
     uint16_t * Q_uncoded_crosspolar_H;
     uint16_t * I_uncoded_crosspolar_V;
     uint16_t * Q_uncoded_crosspolar_V;
+    uint16_t * I_uncoded_H;
+    uint16_t * Q_uncoded_H;
+    uint16_t * I_uncoded_V;
+    uint16_t * Q_uncoded_V
 } IQStruct;
+
 
 
 // This structure is used to address the various pulses in the
