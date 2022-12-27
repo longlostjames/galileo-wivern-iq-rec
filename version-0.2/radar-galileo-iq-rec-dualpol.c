@@ -1375,8 +1375,8 @@ int main(int argc, char *argv[])
 	amcc_fd = RDQ_InitialisePCICARD_New(&dma_buffer, DMA_BUFFER_SIZE);
 
 	// Initialise pointers to DMA banks
-	dma_banks[0] = (short int *)dma_buffer;
-	dma_banks[1] = (short int *)(dma_buffer + (DMA_BUFFER_SIZE / 2));
+	dma_banks[0] = (uint16_t *)dma_buffer;
+	dma_banks[1] = (uint16_t *)(dma_buffer + (DMA_BUFFER_SIZE / 2));
 
 	make_dmux_table(param.ADC_channels, dmux_table);
 
