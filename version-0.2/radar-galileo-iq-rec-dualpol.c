@@ -1933,7 +1933,7 @@ if (tsdump && !TextTimeSeries)
 // Unallocate all the memory
 //---------------------------
 
-RSP_FreeMemory(param); // Free memory allocated by RSP package
+RSP_FreeMemory(&param); // Free memory allocated by RSP package
 
 free(IQStruct.I_uncoded_H);
 free(IQStruct.Q_uncoded_H);
