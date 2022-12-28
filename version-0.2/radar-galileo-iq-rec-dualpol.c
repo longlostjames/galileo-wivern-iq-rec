@@ -1819,13 +1819,13 @@ int main(int argc, char *argv[])
 			fwrite(&centisecond, sizeof(int), 1, pFile);
 #endif
 
-			fwrite(obs.year, sizeof(int), 1, pFile);
-			fwrite(obs.month, sizeof(int), 1, pFile);
-			fwrite(obs.day, sizeof(int), 1, pFile);
-			fwrite(obs.hour, sizeof(int), 1, pFile);
-			fwrite(obs.minute, sizeof(int), 1, pFile);
-			fwrite(obs.second, sizeof(int), 1, pFile);
-			fwrite(obs.centisecond, sizeof(int), 1, pFile);
+//			fwrite(obs.year, sizeof(int), 1, pFile);
+//			fwrite(obs.month, sizeof(int), 1, pFile);
+//			fwrite(obs.day, sizeof(int), 1, pFile);
+//			fwrite(obs.hour, sizeof(int), 1, pFile);
+//			fwrite(obs.minute, sizeof(int), 1, pFile);
+//			fwrite(obs.second, sizeof(int), 1, pFile);
+//			fwrite(obs.centisecond, sizeof(int), 1, pFile);
 
 			/* store I and Q for each pulse */
 			/* nspectra defines the spectra number */
@@ -1844,12 +1844,12 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			fwrite(IQStruct.I_uncoded_H, sizeof(short), total_samples, pFile);
-			fwrite(IQStruct.Q_uncoded_H, sizeof(short), total_samples, pFile);
-			fwrite(IQStruct.I_uncoded_V, sizeof(short), total_samples, pFile);
-			fwrite(IQStruct.Q_uncoded_V, sizeof(short), total_samples, pFile);
+//			fwrite(IQStruct.I_uncoded_H, sizeof(short), total_samples, pFile);
+//			fwrite(IQStruct.Q_uncoded_H, sizeof(short), total_samples, pFile);
+//			fwrite(IQStruct.I_uncoded_V, sizeof(short), total_samples, pFile);
+//			fwrite(IQStruct.Q_uncoded_V, sizeof(short), total_samples, pFile);
 
-			printf("completed storing IQs\n");
+//			printf("completed storing IQs\n");
 
 		} /* End of loop over spectra */
 
