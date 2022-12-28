@@ -104,6 +104,9 @@ static void SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid,
 									 RNC_DimensionStruct *dimensions,
 									 RSP_ObservablesStruct *posobs);
 
+/* in declaration below the moment variable is for compatibility with 
+ * the possible changes to allow averaging over moments, and would index 
+ * each moment in the averae */
 static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 								   RSP_ObservablesStruct *posobs,
 								   TimeSeriesObs_t *obs, int moment);
@@ -1715,6 +1718,8 @@ int main(int argc, char *argv[])
 					obs.azimuth, obs.elevation);
 		}
 
+        int idx 
+
 		/* Start of loop over spectra */
 		for (idx = nspectra = 0; nspectra < param.spectra_averaged; nspectra++)
 		{
@@ -1842,6 +1847,15 @@ int main(int argc, char *argv[])
 			printf("completed storing IQs\n");
 
 		} /* End of loop over spectra */
+
+		if (!exit_now && tsdump && !TextTimeSeries)
+		{
+			printf("Writing timeseries variables to NetCDF...\n");
+			WriteOutTimeSeriesData(ncidts, &param, &obs, &tsobs, 0);
+			status = nc_sync(ncidts);
+			if (status != NC_NOERR)
+				check_netcdf_handle_error(status);
+		}
 
 #ifdef HAVE_DISLIN
 		/* check to see if the real time spectra display option has been selected */
