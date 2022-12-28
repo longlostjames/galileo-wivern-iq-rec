@@ -17,7 +17,7 @@ LIBS   = -L/usr/local/dislin -L/usr/X11R6/lib -ldislin -lX11 \
 #URC_PATH=/home/chilbolton_software/universal_radar_code/
 #URC_PATH=/home/chilbolton_software/radar-galileo/radar-galileo-iq-rec/version-0.2/universal_radar_code/
 
-URC_PATH=universal_radar_code
+URC_PATH=universal_radar_code/
 PATH_RSP=$(URC_PATH)RSP/lib/
 PATH_RDQ=$(URC_PATH)RDQ/lib/
 PATH_RNC=$(URC_PATH)RNC/lib/
