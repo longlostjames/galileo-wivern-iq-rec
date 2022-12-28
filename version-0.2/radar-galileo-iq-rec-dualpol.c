@@ -899,6 +899,12 @@ calc_incoherent_power(fftw_complex *in, int nfft)
 //-------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
+#ifdef USE_HOST_EXT
+	const char * host_ext = USE_HOST_EXT;
+#else  /* USE_HOST_EXT */
+	const char * host_ext = NULL;
+#endif /* USE_HOST_EXT */
+
 	/* DIO card */
 	int fd;
 	ixpio_reg_t bank_A, bank_B, bank_C, bank_0;
