@@ -1718,10 +1718,8 @@ int main(int argc, char *argv[])
 					obs.azimuth, obs.elevation);
 		}
 
-        int idx 
-
 		/* Start of loop over spectra */
-		for (idx = nspectra = 0; nspectra < param.spectra_averaged; nspectra++)
+		for (int idx = nspectra = 0; nspectra < param.spectra_averaged; nspectra++)
 		{
 			/*----------------------------------------------------------------*
 			 * Extract data from DMA memory                                   *
