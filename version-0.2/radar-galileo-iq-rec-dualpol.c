@@ -2071,18 +2071,18 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 	const char *variable;
 	char buffer[1024];
 
-	/****************************************************************************/
-	*define pulses dimension
-			**************************************************************************** /
-		status = nc_def_dim(ncid, "pulses",
+	/****************************************************************************
+	 * define pulses dimension
+	 ****************************************************************************/
+	status = nc_def_dim(ncid, "pulses",
 							param->pulses_per_daq_cycle * param->spectra_averaged,
 							&dims[1]);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
 
-	/****************************************************************************/
-	*define samples dimension
-			**************************************************************************** /
+	/****************************************************************************
+	 * define samples dimension
+	 ****************************************************************************/
 		status = nc_def_dim(ncid, "samples",
 							param->samples_per_pulse_ts,
 							&dims[2]);
@@ -2311,7 +2311,7 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 		"Q_uncoded_V",
 		"Q uncoded V",
 		"counts");
-	status = nc_put_att_short(ncid, obs->QCVid,
+	status = nc_put_att_short(ncid, obs->QVid,
 							  "nominal_bias", NC_SHORT, 1,
 							  &Bias);
 	if (status != NC_NOERR)
