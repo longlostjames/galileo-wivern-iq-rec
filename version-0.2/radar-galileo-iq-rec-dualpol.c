@@ -1724,6 +1724,7 @@ int main(int argc, char *argv[])
 					obs.azimuth, obs.elevation);
 		}
 
+
 		/* Start of loop over spectra */
 		for (int idx = nspectra = 0; nspectra < param.spectra_averaged; nspectra++)
 		{
@@ -1818,13 +1819,13 @@ int main(int argc, char *argv[])
 			fwrite(&centisecond, sizeof(int), 1, pFile);
 #endif
 
-			fwrite(&obs.year, sizeof(int), 1, pFile);
-			fwrite(&obs.month, sizeof(int), 1, pFile);
-			fwrite(&obs.day, sizeof(int), 1, pFile);
-			fwrite(&obs.hour, sizeof(int), 1, pFile);
-			fwrite(&obs.minute, sizeof(int), 1, pFile);
-			fwrite(&obs.second, sizeof(int), 1, pFile);
-			fwrite(&obs.centisecond, sizeof(int), 1, pFile);
+			fwrite(obs.year, sizeof(int), 1, pFile);
+			fwrite(obs.month, sizeof(int), 1, pFile);
+			fwrite(obs.day, sizeof(int), 1, pFile);
+			fwrite(obs.hour, sizeof(int), 1, pFile);
+			fwrite(obs.minute, sizeof(int), 1, pFile);
+			fwrite(obs.second, sizeof(int), 1, pFile);
+			fwrite(obs.centisecond, sizeof(int), 1, pFile);
 
 			/* store I and Q for each pulse */
 			/* nspectra defines the spectra number */
