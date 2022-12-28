@@ -925,7 +925,6 @@ int main(int argc, char *argv[])
 	// float *current_PSD;
 	register int i, j;
 	int temp_int = 0;
-	float tmpRHO = 0.0;
 	// float HH_noise_level;
 	// float HV_noise_level;
 	// float VV_noise_level;
@@ -1092,6 +1091,36 @@ int main(int argc, char *argv[])
 		wivern_mode[1] = (mode1 << 4) | chip_length_n100ns;
 	}
 	mode = mode0; // Select starting mode
+
+	/*--------------------------------------*
+	 * Open up the route to the serial port *
+	 * and apply the right settings         *
+	 *--------------------------------------*/
+	if (positionMessageAct)
+	{
+
+		temp_int = RSM_InitialisePositionMessage(SERIALMESSAGE_PORT);
+		if (temp_int != 0)
+		{
+			printf("Detected a problem with initialising the position message port\n");
+			return 1;
+		}
+
+		/* wait for valid dish position */
+		do
+		{
+			RSM_ReadPositionMessage(&position_msg);
+			/* MTF: Add in breakout on Ctrl-C */
+		} while (!exit_now && position_msg.month == 0); // Check msg is valid
+
+		/* Check msg is valid */
+		if (exit_now)
+		{
+			return 1;
+		}
+
+		printf("Az: %.3f   El: %.3f\n", position_msg.az, position_msg.el);
+	}
 
 	/* Fixup param.num_tx_pol for array creation */
 	param.mode0 &= 0x07;
@@ -1811,144 +1840,144 @@ int main(int argc, char *argv[])
 			fwrite(IQStruct.Q_uncoded_V, sizeof(short), total_samples, pFile);
 
 			printf("completed storing IQs\n");
-		}
-	} /* End of loop over spectra */
+
+		} /* End of loop over spectra */
 
 #ifdef HAVE_DISLIN
-	/* check to see if the real time spectra display option has been selected */
-	if (param.real_time_spectra_display == 1)
-	{
-		/* real time display */
-		/* write out data */
-		for (i = 0; i < param.samples_per_pulse; i++)
+		/* check to see if the real time spectra display option has been selected */
+		if (param.real_time_spectra_display == 1)
 		{
-			/* calculate the log10 of the PSD */
-			for (j = 0; j < param.npsd; j++)
+			/* real time display */
+			/* write out data */
+			for (i = 0; i < param.samples_per_pulse; i++)
 			{
-				zmat[j][i] = 10 * log10(PSD[i].HH[j]);
+				/* calculate the log10 of the PSD */
+				for (j = 0; j < param.npsd; j++)
+				{
+					zmat[j][i] = 10 * log10(PSD[i].HH[j]);
+				}
 			}
+			crvmat((float *)zmat, param.npsd, param.samples_per_pulse, 1, 1);
+			height(20);
+			title();
+			printf("x window updated\n");
 		}
-		crvmat((float *)zmat, param.npsd, param.samples_per_pulse, 1, 1);
-		height(20);
-		title();
-		printf("x window updated\n");
-	}
 #endif /* HAVE_DISLIN */
 
-	/*--------------------------------------------------------------------*
-	 * check to see if we have started a new day                          *
-	 *--------------------------------------------------------------------*/
-	system_time = time(NULL);
-	gmtime_r(&system_time, &tm);
-	if (tm.tm_mday != start_day)
-	{
-		printf("***** New day rollover detected.\n");
-		break; /* Exit loop */
-	}
-
-	if (positionMessageAct)
-	{
-		/* Read position message again */
-		RSM_ReadPositionMessage(&position_msg);
-	}
-	else
-	{
-		struct tm tm;
-		struct timeval tv;
-
-		gettimeofday(&tv, NULL);
-		gmtime_r(&tv.tv_sec, &tm);
-		obs.dish_year = tm.tm_year + 1900;
-		obs.dish_month = tm.tm_mon + 1;
-		obs.dish_day = tm.tm_mday;
-		obs.dish_hour = tm.tm_hour;
-		obs.dish_minute = tm.tm_min;
-		obs.dish_second = tm.tm_sec;
-		obs.dish_centisecond = tv.tv_usec / 10000U;
-	}
-
-	/* Test for end of scan */
-	if (positionMessageAct || scan.scanType == SCAN_SGL)
-	{
-		scanEnd = scanEnd_test(scan.scanType, &position_msg,
-							   scan.min_angle, scan.max_angle);
-	}
-
-	/* Prepare for possible switch to new mode next ray */
-	if ((param.alternate_modes != 0) & (param.long_pulse_mode == 0))
-	{
-		remainder = ray_count % (param.nrays_mode0 + param.nrays_mode1);
-		printf("remainder calculated\n");
-		if (remainder == 0)
+		/*--------------------------------------------------------------------*
+		 * check to see if we have started a new day                          *
+		 *--------------------------------------------------------------------*/
+		system_time = time(NULL);
+		gmtime_r(&system_time, &tm);
+		if (tm.tm_mday != start_day)
 		{
-			new_mode = 0;
-			ray_count = 0;
+			printf("***** New day rollover detected.\n");
+			break; /* Exit loop */
 		}
-		else if (remainder == param.nrays_mode0)
+
+		if (positionMessageAct)
 		{
-			new_mode = 1;
+			/* Read position message again */
+			RSM_ReadPositionMessage(&position_msg);
 		}
 		else
 		{
+			struct tm tm;
+			struct timeval tv;
+
+			gettimeofday(&tv, NULL);
+			gmtime_r(&tv.tv_sec, &tm);
+			obs.dish_year = tm.tm_year + 1900;
+			obs.dish_month = tm.tm_mon + 1;
+			obs.dish_day = tm.tm_mday;
+			obs.dish_hour = tm.tm_hour;
+			obs.dish_minute = tm.tm_min;
+			obs.dish_second = tm.tm_sec;
+			obs.dish_centisecond = tv.tv_usec / 10000U;
+		}
+
+		/* Test for end of scan */
+		if (positionMessageAct || scan.scanType == SCAN_SGL)
+		{
+			scanEnd = scanEnd_test(scan.scanType, &position_msg,
+								   scan.min_angle, scan.max_angle);
+		}
+
+		/* Prepare for possible switch to new mode next ray */
+		if ((param.alternate_modes != 0) & (param.long_pulse_mode == 0))
+		{
+			remainder = ray_count % (param.nrays_mode0 + param.nrays_mode1);
+			printf("remainder calculated\n");
+			if (remainder == 0)
+			{
+				new_mode = 0;
+				ray_count = 0;
+			}
+			else if (remainder == param.nrays_mode0)
+			{
+				new_mode = 1;
+			}
+			else
+			{
+				new_mode = -1;
+			}
+		}
+		else
+		{
+			/* Don't alternate modes (remain in mode defined by mode0) */
 			new_mode = -1;
 		}
 	}
-	else
-	{
-		/* Don't alternate modes (remain in mode defined by mode0) */
-		new_mode = -1;
-	}
-}
 
-/*-------------------------------------------------------------------------- *
- * END OF SCAN LOOP -------------------------------------------------------- *
- *========================================================================== */
+	/*-------------------------------------------------------------------------- *
+	 * END OF SCAN LOOP -------------------------------------------------------- *
+	 *========================================================================== */
 
-exit_endacquisition :
+exit_endacquisition:
 	// Finish off
 	printf("*** Closing PCICARD...\n");
 
-RDQ_ClosePCICARD_New(amcc_fd, &dma_buffer, DMA_BUFFER_SIZE);
+	RDQ_ClosePCICARD_New(amcc_fd, &dma_buffer, DMA_BUFFER_SIZE);
 
-// Close binary time-series data file
-fclose(pFile);
+	// Close binary time-series data file
+	fclose(pFile);
 
-if (tsfid != NULL)
-{
-	/* Close time-series text file */
-	fclose(tsfid);
-}
+	if (tsfid != NULL)
+	{
+		/* Close time-series text file */
+		fclose(tsfid);
+	}
 
-if (tsdump && !TextTimeSeries)
-{
-	printf("About to sync ts.\n");
-	status = nc_sync(ncidts);
-	if (status != NC_NOERR)
-		check_netcdf_handle_error(status);
-	printf("About to close ts.\n");
-	status = nc_close(ncidts);
-	printf("Status = %d\n", status);
-	if (status != NC_NOERR)
-		check_netcdf_handle_error(status);
-	free(tsobs.IH);
-}
+	if (tsdump && !TextTimeSeries)
+	{
+		printf("About to sync ts.\n");
+		status = nc_sync(ncidts);
+		if (status != NC_NOERR)
+			check_netcdf_handle_error(status);
+		printf("About to close ts.\n");
+		status = nc_close(ncidts);
+		printf("Status = %d\n", status);
+		if (status != NC_NOERR)
+			check_netcdf_handle_error(status);
+		free(tsobs.IH);
+	}
 
-//---------------------------
-// Unallocate all the memory
-//---------------------------
+	//---------------------------
+	// Unallocate all the memory
+	//---------------------------
 
-RSP_FreeMemory(&param); // Free memory allocated by RSP package
+	RSP_FreeMemory(&param); // Free memory allocated by RSP package
 
-free(IQStruct.I_uncoded_H);
-free(IQStruct.Q_uncoded_H);
-free(IQStruct.I_uncoded_V);
-free(IQStruct.Q_uncoded_V);
+	free(IQStruct.I_uncoded_H);
+	free(IQStruct.Q_uncoded_H);
+	free(IQStruct.I_uncoded_V);
+	free(IQStruct.Q_uncoded_V);
 
-//=========
-// THE END
-//=========
-printf("All done.\n");
-return (0);
+	//=========
+	// THE END
+	//=========
+	printf("All done.\n");
+	return (0);
 }
 
 /*****************************************************************************/
