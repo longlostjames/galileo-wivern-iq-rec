@@ -104,8 +104,8 @@ static void SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid,
 									 RNC_DimensionStruct *dimensions,
 									 RSP_ObservablesStruct *posobs);
 
-/* in declaration below the moment variable is for compatibility with 
- * the possible changes to allow averaging over moments, and would index 
+/* in declaration below the moment variable is for compatibility with
+ * the possible changes to allow averaging over moments, and would index
  * each moment in the averae */
 static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 								   RSP_ObservablesStruct *posobs,
@@ -900,9 +900,9 @@ calc_incoherent_power(fftw_complex *in, int nfft)
 int main(int argc, char *argv[])
 {
 #ifdef USE_HOST_EXT
-	const char * host_ext = USE_HOST_EXT;
+	const char *host_ext = USE_HOST_EXT;
 #else  /* USE_HOST_EXT */
-	const char * host_ext = NULL;
+	const char *host_ext = NULL;
 #endif /* USE_HOST_EXT */
 
 	/* DIO card */
@@ -1519,6 +1519,7 @@ int main(int argc, char *argv[])
 						 (short *)(dma_banks[dma_bank]), tcount);
 
 	int ray_count = 0;
+	int ray_number = 0;
 	int remainder = -1;
 
 	total_samples = (int)(param.samples_per_pulse * param.nfft);
@@ -1724,7 +1725,6 @@ int main(int argc, char *argv[])
 					obs.azimuth, obs.elevation);
 		}
 
-
 		/* Start of loop over spectra */
 		for (int idx = nspectra = 0; nspectra < param.spectra_averaged; nspectra++)
 		{
@@ -1819,13 +1819,13 @@ int main(int argc, char *argv[])
 			fwrite(&centisecond, sizeof(int), 1, pFile);
 #endif
 
-//			fwrite(obs.year, sizeof(int), 1, pFile);
-//			fwrite(obs.month, sizeof(int), 1, pFile);
-//			fwrite(obs.day, sizeof(int), 1, pFile);
-//			fwrite(obs.hour, sizeof(int), 1, pFile);
-//			fwrite(obs.minute, sizeof(int), 1, pFile);
-//			fwrite(obs.second, sizeof(int), 1, pFile);
-//			fwrite(obs.centisecond, sizeof(int), 1, pFile);
+			//			fwrite(obs.year, sizeof(int), 1, pFile);
+			//			fwrite(obs.month, sizeof(int), 1, pFile);
+			//			fwrite(obs.day, sizeof(int), 1, pFile);
+			//			fwrite(obs.hour, sizeof(int), 1, pFile);
+			//			fwrite(obs.minute, sizeof(int), 1, pFile);
+			//			fwrite(obs.second, sizeof(int), 1, pFile);
+			//			fwrite(obs.centisecond, sizeof(int), 1, pFile);
 
 			/* store I and Q for each pulse */
 			/* nspectra defines the spectra number */
@@ -1844,12 +1844,12 @@ int main(int argc, char *argv[])
 				}
 			}
 
-//			fwrite(IQStruct.I_uncoded_H, sizeof(short), total_samples, pFile);
-//			fwrite(IQStruct.Q_uncoded_H, sizeof(short), total_samples, pFile);
-//			fwrite(IQStruct.I_uncoded_V, sizeof(short), total_samples, pFile);
-//			fwrite(IQStruct.Q_uncoded_V, sizeof(short), total_samples, pFile);
+			//			fwrite(IQStruct.I_uncoded_H, sizeof(short), total_samples, pFile);
+			//			fwrite(IQStruct.Q_uncoded_H, sizeof(short), total_samples, pFile);
+			//			fwrite(IQStruct.I_uncoded_V, sizeof(short), total_samples, pFile);
+			//			fwrite(IQStruct.Q_uncoded_V, sizeof(short), total_samples, pFile);
 
-//			printf("completed storing IQs\n");
+			//			printf("completed storing IQs\n");
 
 		} /* End of loop over spectra */
 
@@ -1946,6 +1946,7 @@ int main(int argc, char *argv[])
 			/* Don't alternate modes (remain in mode defined by mode0) */
 			new_mode = -1;
 		}
+		obs.ray_number++;
 	}
 
 	/*-------------------------------------------------------------------------- *
@@ -2076,17 +2077,17 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 	 * define pulses dimension
 	 ****************************************************************************/
 	status = nc_def_dim(ncid, "pulses",
-							param->pulses_per_daq_cycle * param->spectra_averaged,
-							&dims[1]);
+						param->pulses_per_daq_cycle * param->spectra_averaged,
+						&dims[1]);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
 
 	/****************************************************************************
 	 * define samples dimension
 	 ****************************************************************************/
-		status = nc_def_dim(ncid, "samples",
-							param->samples_per_pulse_ts,
-							&dims[2]);
+	status = nc_def_dim(ncid, "samples",
+						param->samples_per_pulse_ts,
+						&dims[2]);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
 
