@@ -1960,7 +1960,7 @@ exit_endacquisition:
 	RDQ_ClosePCICARD_New(amcc_fd, &dma_buffer, DMA_BUFFER_SIZE);
 
 	// Close binary time-series data file
-	fclose(pFile);
+	//fclose(pFile);
 
 	if (tsfid != NULL)
 	{
