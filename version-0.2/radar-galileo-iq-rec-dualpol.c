@@ -1588,7 +1588,7 @@ int main(int argc, char *argv[])
 			/*---------------------------------------------------------------------*
 			 * Wait until just before next H pulse to prevent HV timeout           *
 			 *---------------------------------------------------------------------*/
-			usleep(RetriggerDelayTime);
+			//usleep(RetriggerDelayTime);
 
 			data = dma_banks[proc_bank];
 			RDQ_StartAcquisition(amcc_fd, dma_bank,
@@ -1659,7 +1659,7 @@ int main(int argc, char *argv[])
 		/*---------------------------------------------------------------------*
 		 * Wait until just before next H pulse to prevent HV timeout.          *
 		 *---------------------------------------------------------------------*/
-		usleep(RetriggerDelayTime);
+		//usleep(RetriggerDelayTime);
 
 		data = dma_banks[proc_bank];
 		RDQ_StartAcquisition(amcc_fd, dma_bank,
