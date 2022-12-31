@@ -1829,20 +1829,21 @@ int main(int argc, char *argv[])
 
 			/* store I and Q for each pulse */
 			/* nspectra defines the spectra number */
-			for (i = 0; i < param.nfft; i++)
-			{
-				obtain_index = i * param.samples_per_pulse;
-				store_index = (i * param.samples_per_pulse) + (nspectra * param.samples_per_pulse * param.nfft);
-				for (j = 0; j < param.samples_per_pulse; j++)
-				{
-					IQStruct.I_uncoded_H[store_index] = I_uncoded_H[obtain_index];
-					IQStruct.Q_uncoded_H[store_index] = Q_uncoded_H[obtain_index];
-					IQStruct.I_uncoded_V[store_index] = I_uncoded_V[obtain_index];
-					IQStruct.Q_uncoded_V[store_index] = Q_uncoded_V[obtain_index];
-					store_index = store_index + 1;
-					obtain_index = obtain_index + 1;
-				}
-			}
+		
+			//for (i = 0; i < param.nfft; i++)
+			//{
+			//	obtain_index = i * param.samples_per_pulse;
+			//	store_index = (i * param.samples_per_pulse) + (nspectra * param.samples_per_pulse * param.nfft);
+			//	for (j = 0; j < param.samples_per_pulse; j++)
+			//	{
+			//		IQStruct.I_uncoded_H[store_index] = I_uncoded_H[obtain_index];
+			//		IQStruct.Q_uncoded_H[store_index] = Q_uncoded_H[obtain_index];
+			//		IQStruct.I_uncoded_V[store_index] = I_uncoded_V[obtain_index];
+			//		IQStruct.Q_uncoded_V[store_index] = Q_uncoded_V[obtain_index];
+			//		store_index = store_index + 1;
+			//		obtain_index = obtain_index + 1;
+			//	}
+			//}
 
 			//			fwrite(IQStruct.I_uncoded_H, sizeof(short), total_samples, pFile);
 			//			fwrite(IQStruct.Q_uncoded_H, sizeof(short), total_samples, pFile);
