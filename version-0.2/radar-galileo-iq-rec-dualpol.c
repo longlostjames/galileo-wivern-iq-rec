@@ -1697,6 +1697,24 @@ int main(int argc, char *argv[])
 		//usleep(RetriggerDelayTime);
 
 		data = dma_banks[proc_bank];
+
+		/* get timeofday */
+		gettimeofday(&tv, NULL);
+		gmtime_r(&tv.tv_sec, &tm);
+
+		obs.year = tm.tm_year + 1900;
+		obs.month = tm.tm_mon + 1;
+		obs.day = tm.tm_mday;
+		obs.hour = tm.tm_hour;
+		obs.minute = tm.tm_min;
+		obs.second = tm.tm_sec;
+		obs.centisecond = (int)tv.tv_usec / 10000;
+
+		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
+				obs.year, obs.month, obs.day,
+				obs.hour, obs.minute, obs.second, obs.centisecond);
+		printf("Ray start: %s\n", datestring);
+
 		RDQ_StartAcquisition(amcc_fd, dma_bank,
 							 (short *)(dma_banks[dma_bank]), tcount);
 
