@@ -77,6 +77,7 @@ typedef struct TimeSeriesObs_t
 	int azimuthid;
 	int elevationid;
 	int tsid;
+	int rayend_tsid;
 	int dish_tsid;
 	int IHid;
 	int QHid;
@@ -1456,8 +1457,8 @@ int main(int argc, char *argv[])
 		obs.elevation = scan.min_angle;
 	}
 
-	RDQ_StartAcquisition(amcc_fd, dma_bank,
-						 (short *)dma_banks[dma_bank], tcount);
+	//RDQ_StartAcquisition(amcc_fd, dma_bank,
+	//					 (short *)dma_banks[dma_bank], tcount);
 
 	if (tsdump)
 	{
@@ -1651,6 +1652,23 @@ int main(int argc, char *argv[])
 		status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
 		if (status != 0)
 			printf("There was a problem in WaitForAcquisitionToComplete\n");
+
+		/* get timeofday */
+		gettimeofday(&tv, NULL);
+		gmtime_r(&tv.tv_sec, &tm);
+
+		obs.year = tm.tm_year + 1900;
+		obs.month = tm.tm_mon + 1;
+		obs.day = tm.tm_mday;
+		obs.hour = tm.tm_hour;
+		obs.minute = tm.tm_min;
+		obs.second = tm.tm_sec;
+		obs.centisecond = (int)tv.tv_usec / 10000;
+
+		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
+				obs.year, obs.month, obs.day,
+				obs.hour, obs.minute, obs.second, obs.centisecond);
+		printf("Date time: %s\n", datestring);
 
 		/* Swap around the areas used for storing daq and processing from */
 		dma_bank = 1 - dma_bank;
@@ -2126,6 +2144,41 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 			scan->date[4], scan->date[5],
 			scan->date[6], scan->date[7]);
 	status = nc_put_att_text(ncid, obs->tsid, "units",
+							 strlen(buffer) + 1, buffer);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	/*--------------------------------------------------------------------------*
+	 * ray end time definition                                                  *
+	 *--------------------------------------------------------------------------*/
+	status = nc_def_var(ncid, "ray_end_time",
+						NC_FLOAT, 1, dims, &obs->rayend_tsid);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	variable = "ray_end_time";
+	status = nc_put_att_text(ncid, obs->rayend_tsid, "chilbolton_standard_name",
+							 strlen(variable) + 1, variable);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	variable = "time_ray_end";
+	status = nc_put_att_text(ncid, obs->rayend_tsid, "long_name",
+							 strlen(variable) + 1, variable);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	variable = "%.2f";
+	status = nc_put_att_text(ncid, obs->rayendd_tsid, "C_format",
+							 strlen(variable) + 1, variable);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	sprintf(buffer, "seconds since %c%c%c%c-%c%c-%c%c 00:00:00 +00:00",
+			scan->date[0], scan->date[1], scan->date[2], scan->date[3],
+			scan->date[4], scan->date[5],
+			scan->date[6], scan->date[7]);
+	status = nc_put_att_text(ncid, obs->rayend_tsid, "units",
 							 strlen(buffer) + 1, buffer);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
