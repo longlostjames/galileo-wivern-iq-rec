@@ -2186,7 +2186,7 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 		check_netcdf_handle_error(status);
 
 	variable = "%.2f";
-	status = nc_put_att_text(ncid, obs->rayend646_tsid, "C_format",
+	status = nc_put_att_text(ncid, obs->rayend_tsid, "C_format",
 							 strlen(variable) + 1, variable);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
