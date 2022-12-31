@@ -1256,10 +1256,10 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	IQStruct.I_uncoded_H = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
-	IQStruct.Q_uncoded_H = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
-	IQStruct.I_uncoded_V = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
-	IQStruct.Q_uncoded_V = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+	//IQStruct.I_uncoded_H = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+	//IQStruct.Q_uncoded_H = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+	//IQStruct.I_uncoded_V = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+	//IQStruct.Q_uncoded_V = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
 
 	if (I_uncoded_H == NULL || Q_uncoded_H == NULL ||
 		I_uncoded_V == NULL || Q_uncoded_V == NULL)
@@ -1516,6 +1516,23 @@ int main(int argc, char *argv[])
 			goto exit_endacquisition;
 	}
 
+	/* get timeofday */
+	gettimeofday(&tv, NULL);
+	gmtime_r(&tv.tv_sec, &tm);
+
+	obs.year = tm.tm_year + 1900;
+	obs.month = tm.tm_mon + 1;
+	obs.day = tm.tm_mday;
+	obs.hour = tm.tm_hour;
+	obs.minute = tm.tm_min;
+	obs.second = tm.tm_sec;
+	obs.centisecond = (int)tv.tv_usec / 10000;
+
+	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
+			obs.year, obs.month, obs.day,
+			obs.hour, obs.minute, obs.second, obs.centisecond);
+	printf("Ray start: %s\n", datestring);
+
 	RDQ_StartAcquisition(amcc_fd, dma_bank,
 						 (short *)(dma_banks[dma_bank]), tcount);
 
@@ -1539,9 +1556,9 @@ int main(int argc, char *argv[])
 		if (new_mode >= 0)
 		{
 			/* Wait for acquisition to complete before setting new mode */
-			status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
-			if (status != 0)
-				printf("There was a problem in WaitForAcquisitionToComplete\n");
+			//status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
+			//if (status != 0)
+			//	printf("There was a problem in WaitForAcquisitionToComplete\n");
 
 			/* Swap around the areas used for storing data and processing from */
 			dma_bank = 1 - dma_bank;
@@ -1591,9 +1608,9 @@ int main(int argc, char *argv[])
 			 *---------------------------------------------------------------------*/
 			//usleep(RetriggerDelayTime);
 
-			data = dma_banks[proc_bank];
-			RDQ_StartAcquisition(amcc_fd, dma_bank,
-								 (short *)(dma_banks[dma_bank]), tcount);
+			//data = dma_banks[proc_bank];
+			//RDQ_StartAcquisition(amcc_fd, dma_bank,
+			//					 (short *)(dma_banks[dma_bank]), tcount);
 		}
 
 #if 0
@@ -1668,7 +1685,7 @@ int main(int argc, char *argv[])
 		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
 				obs.year, obs.month, obs.day,
 				obs.hour, obs.minute, obs.second, obs.centisecond);
-		printf("Date time: %s\n", datestring);
+		printf("Ray end: %s\n", datestring);
 
 		/* Swap around the areas used for storing daq and processing from */
 		dma_bank = 1 - dma_bank;
@@ -2169,7 +2186,7 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 		check_netcdf_handle_error(status);
 
 	variable = "%.2f";
-	status = nc_put_att_text(ncid, obs->rayend_tsid, "C_format",
+	status = nc_put_att_text(ncid, obs->rayend646_tsid, "C_format",
 							 strlen(variable) + 1, variable);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
