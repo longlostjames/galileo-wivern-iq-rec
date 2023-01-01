@@ -106,8 +106,8 @@ static void SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid,
 									 RSP_ObservablesStruct *posobs);
 
 /* in declaration below the moment variable is for compatibility with
- * the possible changes to allow averaging over moments, and would index
- * each moment in the averae */
+ * possible changes to allow averaging over moments, and would index
+ * each moment in the average */
 static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 								   RSP_ObservablesStruct *posobs,
 								   TimeSeriesObs_t *obs, int moment);
@@ -973,11 +973,10 @@ int main(int argc, char *argv[])
 	//  int PSD_varid[4];
 	//  int PSD_rapid_varid[4];
 	int file_stateid = 0;
-	// int	scanEnd = (-1);
 	bool scanEnd = false;
 	float norm_uncoded;
 
-	/* Time series file pointer */
+	/* Time series text file pointer */
 	FILE *tsfid = NULL;
 
 	//  static      RSM_SerialMessageStruct m_serialmsg;
@@ -989,23 +988,12 @@ int main(int argc, char *argv[])
 
 	int nm;
 
-// The following are shortcut pointers to the elements of
-// the obs structure
-#if 0
-	uint16_t *I_uncoded_copolar_H;
-	uint16_t *Q_uncoded_copolar_H;
-	uint16_t *I_uncoded_copolar_V;
-	uint16_t *Q_uncoded_copolar_V;
-	uint16_t *I_uncoded_crosspolar_H;
-	uint16_t *Q_uncoded_crosspolar_H;
-	uint16_t *I_uncoded_crosspolar_V;
-	uint16_t *Q_uncoded_crosspolar_V;
-#endif
+	// The following are shortcut pointers to the elements of
+	// the obs structure
 	uint16_t *I_uncoded_H;
 	uint16_t *Q_uncoded_H;
 	uint16_t *I_uncoded_V;
 	uint16_t *Q_uncoded_V;
-
 	uint16_t *log_raw;
 	uint16_t *TX1data;
 	uint16_t *TX2data;
@@ -1019,11 +1007,6 @@ int main(int argc, char *argv[])
 	// RSP_ObservablesStruct PSD_obs;
 	// RSP_ObservablesStruct PSD_RAPID_obs;
 	TimeSeriesObs_t tsobs;
-
-	// short int *I_uncoded_copolar_H;
-	// short int *Q_uncoded_copolar_H;
-	// short int *I_uncoded_copolar_V;
-	// short int *Q_uncoded_copolar_V;
 
 	int newfile = 1;
 	int obtain_index;
@@ -1108,7 +1091,6 @@ int main(int argc, char *argv[])
 	 *--------------------------------------*/
 	if (positionMessageAct)
 	{
-
 		temp_int = RSM_InitialisePositionMessage(SERIALMESSAGE_PORT);
 		if (temp_int != 0)
 		{
@@ -1256,10 +1238,12 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	//IQStruct.I_uncoded_H = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
-	//IQStruct.Q_uncoded_H = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
-	//IQStruct.I_uncoded_V = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
-	//IQStruct.Q_uncoded_V = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+#if 0
+	IQStruct.I_uncoded_H = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+	IQStruct.Q_uncoded_H = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+	IQStruct.I_uncoded_V = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+	IQStruct.Q_uncoded_V = calloc(param.samples_per_pulse * param.nfft * param.num_tx_pol * param.spectra_averaged, sizeof(uint16_t));
+#endif
 
 	if (I_uncoded_H == NULL || Q_uncoded_H == NULL ||
 		I_uncoded_V == NULL || Q_uncoded_V == NULL)
@@ -1274,16 +1258,6 @@ int main(int argc, char *argv[])
 	V_not_H = calloc(num_data, sizeof(uint16_t));
 
 	num_data *= param.spectra_averaged;
-#if 0
-	tsobs.ICOH     = malloc (num_data * 8 * sizeof (uint16_t));
-	tsobs.QCOH     = tsobs.ICOH     + num_data;
-	tsobs.ICXH     = tsobs.QCOH     + num_data;
-	tsobs.QCXH     = tsobs.ICXH     + num_data;
-	tsobs.TxPower1 = tsobs.QCXH     + num_data;
-	tsobs.TxPower2 = tsobs.TxPower1 + num_data;
-	tsobs.VnotH    = tsobs.TxPower2 + num_data;
-	tsobs.RawLog   = tsobs.VnotH    + num_data;
-#endif
 
 	tsobs.IH = malloc(num_data * 8 * sizeof(uint16_t));
 	tsobs.QH = tsobs.IH + num_data;
@@ -1345,30 +1319,26 @@ int main(int argc, char *argv[])
 	bank_B.value = pulse_offset_byte_b;
 	bank_C.value = wivern_mode[new_mode];
 
-	{
-		mode = (new_mode == 1) ? param.mode1 : param.mode0;
-		mode_gate_offset = (mode < PM_Double_H) ? param.samples_per_pulse : gate_offset;
+	mode = (new_mode == 1) ? param.mode1 : param.mode0;
+	mode_gate_offset = (mode < PM_Double_H) ? param.samples_per_pulse : gate_offset;
 
-		/* Fixup param.num_tx_pol for mode */
-		switch (mode & 0x07)
-		{
-		case PM_Undefined0:
-			param.num_tx_pol = 1;
-			break;
-		case PM_Single_H:
-		case PM_Single_V:
-		case PM_Double_H:
-		case PM_Double_V:
-			param.num_tx_pol = 1;
-			break;
-		case PM_Single_HV:
-		case PM_Double_HV_VH:
-		case PM_Double_HV_HV:
-			param.num_tx_pol = 2;
-			break;
-		}
-		// /* Hard code to 2 as using 1 breaks ffts */
-		// param.num_tx_pol = 2;
+	/* Fixup param.num_tx_pol for mode */
+	switch (mode & 0x07)
+	{
+	case PM_Undefined0:
+		param.num_tx_pol = 1;
+		break;
+	case PM_Single_H:
+	case PM_Single_V:
+	case PM_Double_H:
+	case PM_Double_V:
+		param.num_tx_pol = 1;
+		break;
+	case PM_Single_HV:
+	case PM_Double_HV_VH:
+	case PM_Double_HV_HV:
+		param.num_tx_pol = 2;
+		break;
 	}
 
 #ifndef NO_DIO
@@ -1421,8 +1391,6 @@ int main(int argc, char *argv[])
 	dma_banks[1] = (uint16_t *)(dma_buffer + (DMA_BUFFER_SIZE / 2));
 
 	make_dmux_table(param.ADC_channels, dmux_table);
-
-	printf("** Starting acquisition...\n");
 
 	/* load in current dish_time */
 	if (positionMessageAct)
@@ -1516,6 +1484,8 @@ int main(int argc, char *argv[])
 			goto exit_endacquisition;
 	}
 
+	printf("** Starting acquisition...\n");
+
 	/* get timeofday */
 	gettimeofday(&tv, NULL);
 	gmtime_r(&tv.tv_sec, &tm);
@@ -1537,7 +1507,6 @@ int main(int argc, char *argv[])
 						 (short *)(dma_banks[dma_bank]), tcount);
 
 	int ray_count = 0;
-	int ray_number = 0;
 	int remainder = -1;
 
 	total_samples = (int)(param.samples_per_pulse * param.nfft);
@@ -1552,10 +1521,10 @@ int main(int argc, char *argv[])
 
 		ray_count++;
 
-		/* This step should mean we discard data in proc bank at time of mode change */
 		if (new_mode >= 0)
 		{
 			/* Wait for acquisition to complete before setting new mode */
+			/* CJW: commented out as this if statement will not be accessed for ray 0 */
 			//status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
 			//if (status != 0)
 			//	printf("There was a problem in WaitForAcquisitionToComplete\n");
@@ -1603,14 +1572,6 @@ int main(int argc, char *argv[])
 #endif /* NO_DIO */
 			new_mode = -1;
 
-			/*---------------------------------------------------------------------*
-			 * Wait until just before next H pulse to prevent HV timeout           *
-			 *---------------------------------------------------------------------*/
-			//usleep(RetriggerDelayTime);
-
-			//data = dma_banks[proc_bank];
-			//RDQ_StartAcquisition(amcc_fd, dma_bank,
-			//					 (short *)(dma_banks[dma_bank]), tcount);
 		}
 
 #if 0
@@ -1694,8 +1655,9 @@ int main(int argc, char *argv[])
 		/*---------------------------------------------------------------------*
 		 * Wait until just before next H pulse to prevent HV timeout.          *
 		 *---------------------------------------------------------------------*/
-		//usleep(RetriggerDelayTime);
+		usleep(RetriggerDelayTime);
 
+		/* Extract data for processing */
 		data = dma_banks[proc_bank];
 
 		/* get timeofday */
@@ -1715,26 +1677,6 @@ int main(int argc, char *argv[])
 				obs.hour, obs.minute, obs.second, obs.centisecond);
 		printf("Ray start: %s\n", datestring);
 
-		RDQ_StartAcquisition(amcc_fd, dma_bank,
-							 (short *)(dma_banks[dma_bank]), tcount);
-
-		/* get timeofday */
-		gettimeofday(&tv, NULL);
-		gmtime_r(&tv.tv_sec, &tm);
-
-		obs.year = tm.tm_year + 1900;
-		obs.month = tm.tm_mon + 1;
-		obs.day = tm.tm_mday;
-		obs.hour = tm.tm_hour;
-		obs.minute = tm.tm_min;
-		obs.second = tm.tm_sec;
-		obs.centisecond = (int)tv.tv_usec / 10000;
-
-		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
-				obs.year, obs.month, obs.day,
-				obs.hour, obs.minute, obs.second, obs.centisecond);
-		printf("Date time: %s\n", datestring);
-
 		/* obtain dish time */
 		if (positionMessageAct)
 		{
@@ -1751,12 +1693,10 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			struct tm tm;
-			struct timeval tv;
-
-			gettimeofday(&tv, NULL);
-			gmtime_r(&tv.tv_sec, &tm);
-
+			//struct tm tm;
+			//struct timeval tv;
+			//gettimeofday(&tv, NULL);
+			//gmtime_r(&tv.tv_sec, &tm);
 			obs.dish_year = tm.tm_year + 1900;
 			obs.dish_month = tm.tm_mon + 1;
 			obs.dish_day = tm.tm_mday;
@@ -1769,20 +1709,23 @@ int main(int argc, char *argv[])
 			obs.elevation = scan.min_angle;
 		}
 
+		RDQ_StartAcquisition(amcc_fd, dma_bank,
+							 (short *)(dma_banks[dma_bank]), tcount);
+
 		if (tsfid != NULL)
 		{
-			/* time-series ray header */
+			/* time-series ray header for text file */
 			fprintf(tsfid, "Ray_number: %d, %d\n", obs.ray_number, nm);
 			fprintf(tsfid, "Date_time: %s\n", datestring);
 			fprintf(tsfid, "Az: %7.2f, El: %7.2f\n",
 					obs.azimuth, obs.elevation);
-		}
+		}		
 
 		/* Start of loop over spectra */
 		for (int idx = nspectra = 0; nspectra < param.spectra_averaged; nspectra++)
 		{
 			/*----------------------------------------------------------------*
-			 * Extract data from DMA memory                                   *
+			 * Extract data for each channel                                  *
 			 *----------------------------------------------------------------*/
 			for (i = 0; i < num_pulses; i++)
 			{
@@ -1830,48 +1773,7 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			//----------------------------------------------------------------
-			// Extract data from DMA memory
-			//----------------------------------------------------------------
-			/* Commented out as already done above with tsobs
-			for (i = 0; i < num_pulses; i++)
-			{
-				register int count_reg;
-				for (j = 0; j < param.samples_per_pulse; j++)
-				{
-					count_reg = (i * param.samples_per_pulse) + j;
-
-					if (swap_iq_channels)
-					{
-						I_uncoded_H[count_reg] = GET_CHANNEL(data, SWAP_CHAN_IH);
-						Q_uncoded_H[count_reg] = GET_CHANNEL(data, SWAP_CHAN_QH);
-						I_uncoded_V[count_reg] = GET_CHANNEL(data, SWAP_CHAN_IV);
-						Q_uncoded_V[count_reg] = GET_CHANNEL(data, SWAP_CHAN_QV);
-					}
-					else
-					{
-						I_uncoded_H[count_reg] = GET_CHANNEL(data, CHAN_IH);
-						Q_uncoded_H[count_reg] = GET_CHANNEL(data, CHAN_QH);
-						I_uncoded_V[count_reg] = GET_CHANNEL(data, CHAN_IV);
-						Q_uncoded_V[count_reg] = GET_CHANNEL(data, CHAN_QV);
-					}
-
-					INC_POINTER(data, param.ADC_channels);
-				}
-			}
-
-			*/
-
 #if 0
-			fwrite(&year, sizeof(int), 1, pFile);
-			fwrite(&month, sizeof(int), 1, pFile);
-			fwrite(&day, sizeof(int), 1, pFile);
-			fwrite(&hour, sizeof(int), 1, pFile);
-			fwrite(&minute, sizeof(int), 1, pFile);
-			fwrite(&second, sizeof(int), 1, pFile);
-			fwrite(&centisecond, sizeof(int), 1, pFile);
-#endif
-
 			//			fwrite(obs.year, sizeof(int), 1, pFile);
 			//			fwrite(obs.month, sizeof(int), 1, pFile);
 			//			fwrite(obs.day, sizeof(int), 1, pFile);
@@ -1904,6 +1806,7 @@ int main(int argc, char *argv[])
 			//			fwrite(IQStruct.Q_uncoded_V, sizeof(short), total_samples, pFile);
 
 			//			printf("completed storing IQs\n");
+#endif
 
 		} /* End of loop over spectra */
 
@@ -1939,12 +1842,14 @@ int main(int argc, char *argv[])
 
 		/*--------------------------------------------------------------------*
 		 * check to see if we have started a new day                          *
+		 * This should be modified to create new files after a given interval *
+		 * e.g. hourly files                                                  *
 		 *--------------------------------------------------------------------*/
 		system_time = time(NULL);
-		gmtime_r(&system_time, &tm);
-		if (tm.tm_mday != start_day)
+		gmtime_r (&system_time, &tm);
+		if (tm.tm_mhour != obs.hour)
 		{
-			printf("***** New day rollover detected.\n");
+			printf("***** New hour rollover detected.\n");
 			break; /* Exit loop */
 		}
 
@@ -1952,6 +1857,15 @@ int main(int argc, char *argv[])
 		{
 			/* Read position message again */
 			RSM_ReadPositionMessage(&position_msg);
+			obs.azimuth = position_msg.az;
+			obs.elevation = position_msg.el;
+			obs.dish_year = position_msg.year;
+			obs.dish_month = position_msg.month;
+			obs.dish_day = position_msg.day;
+			obs.dish_hour = position_msg.hour;
+			obs.dish_minute = position_msg.min;
+			obs.dish_second = position_msg.sec;
+			obs.dish_centisecond = position_msg.centi_sec;
 		}
 		else
 		{
@@ -2042,10 +1956,12 @@ exit_endacquisition:
 
 	RSP_FreeMemory(&param); // Free memory allocated by RSP package
 
+#if 0
 	free(IQStruct.I_uncoded_H);
 	free(IQStruct.Q_uncoded_H);
 	free(IQStruct.I_uncoded_V);
 	free(IQStruct.Q_uncoded_V);
+#endif
 
 	//=========
 	// THE END
