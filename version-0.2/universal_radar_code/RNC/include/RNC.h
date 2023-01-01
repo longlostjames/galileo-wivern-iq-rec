@@ -75,6 +75,8 @@ extern void   RNC_SetupStaticVariables (int ncid, int radar,
 					const RSP_ParamStruct * param);
 extern void   RNC_SetupDimensions (int ncid, const RSP_ParamStruct * param,
 				   RNC_DimensionStruct * dimensions);
+extern void   RNC_SetupTimeSeriesDimensions (int ncid, const RSP_ParamStruct * param,
+				   RNC_DimensionStruct * dimensions);
 extern void   RNC_SetupRapidLogPSDDimensions (int ncid, int radar,
 					      const RSP_ParamStruct * param,
 					      RNC_DimensionStruct * dimensions);
