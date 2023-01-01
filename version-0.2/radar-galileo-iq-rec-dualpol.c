@@ -1847,7 +1847,7 @@ int main(int argc, char *argv[])
 		 *--------------------------------------------------------------------*/
 		system_time = time(NULL);
 		gmtime_r (&system_time, &tm);
-		if (tm.tm_mhour != obs.hour)
+		if (tm.tm_hour != obs.hour)
 		{
 			printf("***** New hour rollover detected.\n");
 			break; /* Exit loop */
