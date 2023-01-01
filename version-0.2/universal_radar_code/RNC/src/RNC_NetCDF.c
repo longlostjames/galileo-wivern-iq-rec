@@ -1077,6 +1077,42 @@ RNC_SetupDimensions (int                     ncid,
  *                                                                           *
  *****************************************************************************/
 void
+RNC_SetupTimeSeriesDimensions (int                     ncid,
+		     const RSP_ParamStruct * param,
+		     RNC_DimensionStruct *   dimensions)
+{
+    int status;
+
+    /*--------------------------------------------------------------------------*
+     * define time dimension                                                    *
+     *--------------------------------------------------------------------------*/
+    status = nc_def_dim (ncid, "time", NC_UNLIMITED, &dimensions->time_dim);
+    if (status != NC_NOERR) check_netcdf_handle_error (status);
+
+	/****************************************************************************
+	 * define pulses dimension
+	 ****************************************************************************/
+	status = nc_def_dim(ncid, "pulses",
+						param->pulses_per_daq_cycle * param->spectra_averaged,
+						&dimensions->pulses_dim);
+	if (status != NC_NOERR) check_netcdf_handle_error(status);
+
+    /*--------------------------------------------------------------------------*
+     * define range dimension                                                   *
+     *--------------------------------------------------------------------------*/
+    status = nc_def_dim (ncid, "range",
+			 param->samples_per_pulse,
+			 &dimensions->range_dim);
+    if (status != NC_NOERR) check_netcdf_handle_error (status);
+
+}
+
+
+
+/*****************************************************************************
+ *                                                                           *
+ *****************************************************************************/
+void
 RNC_SetupRapidLogPSDDimensions (int                     ncid,
 				int                     radar,
 				const RSP_ParamStruct * param,

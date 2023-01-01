@@ -1461,7 +1461,7 @@ int main(int argc, char *argv[])
 										scan.date, host_ext,
 										GetScanTypeName(scan.scanType),
 										"", "ts");
-			RNC_SetupDimensions(ncidts, &param, &dimensionsts);
+			RNC_SetupTimeSeriesDimensions(ncidts, &param, &dimensionsts);
 			RNC_SetupGlobalAttributes(ncidts, GALILEO, &scan, &param, argc, argv);
 			RNC_SetupStaticVariables(ncidts, GALILEO, &param);
 			RNC_SetupRange(ncidts, &param, &dimensionsts);
@@ -2046,23 +2046,24 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 	/****************************************************************************
 	 * define pulses dimension
 	 ****************************************************************************/
-	status = nc_def_dim(ncid, "pulses",
-						param->pulses_per_daq_cycle * param->spectra_averaged,
-						&dims[1]);
-	if (status != NC_NOERR)
-		check_netcdf_handle_error(status);
+	//status = nc_def_dim(ncid, "pulses",
+	//					param->pulses_per_daq_cycle * param->spectra_averaged,
+	//					&dims[1]);
+	//if (status != NC_NOERR)
+	//	check_netcdf_handle_error(status);
 
 	/****************************************************************************
 	 * define samples dimension
 	 ****************************************************************************/
-	status = nc_def_dim(ncid, "samples",
-						param->samples_per_pulse_ts,
-						&dims[2]);
-	if (status != NC_NOERR)
-		check_netcdf_handle_error(status);
+	//status = nc_def_dim(ncid, "samples",
+	//					param->samples_per_pulse_ts,
+	//					&dims[2]);
+	//if (status != NC_NOERR)
+	//	check_netcdf_handle_error(status);
 
 	dims[0] = dimensions->time_dim;
-	// dims[2] = dimensions->range_dim;
+	dims[1] = dimensions->pulses_dim;
+	dims[2] = dimensions->range_dim;
 
 	/*--------------------------------------------------------------------------*
 	 * time definition                                                          *

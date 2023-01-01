@@ -54,6 +54,7 @@ typedef struct
     int fft_bin_dim;
     int coded_fft_bin_dim;
     int spectra_number_dim;
+	int pulses_dim;
 } RNC_DimensionStruct;
 
 extern int  RNC_OpenNetcdfFile (const char * radar_name,
