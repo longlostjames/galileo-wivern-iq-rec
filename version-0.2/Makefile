@@ -3,8 +3,9 @@
 # Ed Pavelin 18/5/2004
 
 CC     = gcc
-CFLAGS = -Wall -O3 -ffast-math -I/usr/local/dislin -ggdb -ggdb3 -DHAVE_DISLIN \
+#CFLAGS = -Wall -O3 -ffast-math -I/usr/local/dislin -ggdb -ggdb3 -DHAVE_DISLIN \
 	 -D_FILE_OFFSET_BITS=64
+CFLAGS = -Wall -O3 -ffast-math -I/usr/local/dislin -ggdb -ggdb3 -DHAVE_DISLIN
 LIBS   = -L/usr/local/dislin -L/usr/X11R6/lib -ldislin -lX11 \
 	 -lnetcdf -lfftw3 -lm -lpthread -lrt
 
