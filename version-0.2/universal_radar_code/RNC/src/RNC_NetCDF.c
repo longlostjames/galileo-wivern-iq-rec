@@ -122,17 +122,18 @@ RNC_OpenNetcdfFile (const char * radar_name,
     strcpy (pt, ".nc");
 
     printf ("netCDF creating : %s\n", netcdf_pathfile);
-#if 0
+
     /* NC_64BIT_OFFSET not available on all systems */
     status = nc_create (netcdf_pathfile,
 			NC_NOCLOBBER /*| NC_64BIT_OFFSET*/ | NC_SHARE,
 			&ncid);
     if (status != NC_NOERR) check_netcdf_handle_error (status);
-#endif
 
+#if 0
     status = nc_create (netcdf_pathfile,
 			NC_NOCLOBBER | NC_NETCDF4 | NC_CLASSIC_MODEL | NC_SHARE, &ncid);
     if (status != NC_NOERR) check_netcdf_handle_error (status);
+#endif
 
     return ncid;
 }
