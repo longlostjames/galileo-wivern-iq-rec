@@ -90,3 +90,62 @@ RTS_OpenTSFile (const char * radar_name,
 
     return fopen (ts_pathfile, "w");
 }
+
+FILE *fp = fopen("mybinfile.ttt", "wb");
+
+FILE *
+RTS_OpenTSFileBinary (const char * radar_name,
+		const char * date,
+		const char * host_ext,
+		const char * scan_name)
+{
+    char * ts_pathfile;
+    char * pt;
+    mode_t mask = 002;
+    size_t size;    
+
+    umask (mask);
+
+    size = strlen (RADAR_DATA_PATH) + 23;
+    size += strlen (radar_name) << 1;
+    if (host_ext != NULL)
+	size += strlen (host_ext);
+    size += strlen (date);
+    size += strlen (scan_name);
+    ts_pathfile = alloca (size);
+
+    pt    = stpcpy (ts_pathfile, RADAR_DATA_PATH);
+    pt    = stpcpy (pt, radar_name);
+    pt    = stpcpy (pt, "/ts/");
+    stpncpy (pt, date, 8);
+    pt[8] = '\0';
+    pt   += strlen (pt);
+
+    if (!mkdir (ts_pathfile, (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)))
+    {
+	printf ("directory created : %s\n", ts_pathfile);
+    }
+    else
+    {
+	if (errno != EEXIST)
+	{
+	    printf ("mkdir ERROR, errno : %d (%m), ts_pathfile : %s\n",
+		    errno,
+		    ts_pathfile);
+	}
+    }
+
+    *pt++ = '/';
+    pt    = stpcpy (pt, radar_name);
+    if (host_ext != NULL)
+	pt = stpcpy (pt, host_ext);
+    *pt++ = '_';
+    pt    = stpcpy (pt, date);
+    *pt++ = '_';
+    pt    = stpcpy (pt, scan_name);
+    strcpy (pt, "-ts.bin");
+
+    printf("TS creating : %s\n", ts_pathfile);
+
+    return fopen (ts_pathfile, "wb");
+}

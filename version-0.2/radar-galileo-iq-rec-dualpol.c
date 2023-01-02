@@ -134,7 +134,7 @@ static bool debug = false;
 static bool swap_iq_channels = false;
 static bool tsdump = true;
 static bool TextTimeSeries = false;
-static bool NCTimeSeries = true;
+static bool NetCDFTimeSeries = true;
 
 /* Disable position message for fixed position operation */
 static bool positionMessageAct = false; // default is OFF
@@ -911,7 +911,7 @@ int main(int argc, char *argv[])
 	ixpio_reg_t bank_A, bank_B, bank_C, bank_0;
 
 	/* For binary time series file */
-	FILE *pFile = NULL;
+	FILE *tsbinfid = NULL;
 	char filename[255];
 
 	int num_pulses;
@@ -1451,7 +1451,7 @@ int main(int argc, char *argv[])
 				fprintf(tsfid, "ADC_channels: %d\n", param.ADC_channels);
 			}
 		}
-		else
+		else if (NetCDFTimeSeries)
 		{
 			/* NetCDF Time series */
 			RNC_DimensionStruct dimensionsts;
@@ -1470,6 +1470,26 @@ int main(int argc, char *argv[])
 			status = nc_enddef(ncidts);
 			if (status != NC_NOERR)
 				check_netcdf_handle_error(status);
+		}
+		else
+		{
+			/* Setup binary time-series dump file */
+			tsbinfid = RTS_OpenTSFileBinary(GetRadarName(GALILEO), scan.date, host_ext,
+								   GetScanTypeName(scan.scanType));
+
+			if (tsbinfid == NULL)
+			{
+				tsdump = false;
+				printf("**** Can't open time series file: %m ****\n");
+				printf("**** Time series recording off ****\n");
+			}
+			else
+			{
+				fwrite(param->pulses_per_ray, sizeof(int), 1, tsbinfid);
+				fwrite(param->samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
+				fwrite(param->divfactor, sizeof(int), 1, tsbinfid);
+				fwrite(param->delay_clocks, sizeof(int), 1, tsbinfid);
+				fwrite(param->ADC_channels, sizeof(int), 1, tsbinfid);
 		}
 	}
 
@@ -1719,7 +1739,17 @@ int main(int argc, char *argv[])
 			fprintf(tsfid, "Date_time: %s\n", datestring);
 			fprintf(tsfid, "Az: %7.2f, El: %7.2f\n",
 					obs.azimuth, obs.elevation);
-		}		
+		}	
+
+		if (tsbinfid != NULL)
+		{
+			fwrite(obs.ray_number, sizeof(int), 1, tsbinfid);
+			fwrite(obs.azimuth, sizeof(float), 1, tsbinfid);
+			fwrite(obs.elevation, sizeof(float), 1, tsbinfid);
+			unsigned short sizeofstring = strlen(datestring) + 1;
+			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+			fwrite(datesstring, sizeof(char), sizeofstring, tsbinfid);
+		}	
 
 		/* Start of loop over spectra */
 		for (int idx = nspectra = 0; nspectra < param.spectra_averaged; nspectra++)
@@ -1812,11 +1842,25 @@ int main(int argc, char *argv[])
 
 		if (!exit_now && tsdump && !TextTimeSeries)
 		{
-			printf("Writing timeseries variables to NetCDF...\n");
-			WriteOutTimeSeriesData(ncidts, &param, &obs, &tsobs, 0);
-			status = nc_sync(ncidts);
-			if (status != NC_NOERR)
-				check_netcdf_handle_error(status);
+			if (NetCDFTimeSeries)
+			{
+				printf("Writing timeseries variables to NetCDF...\n");
+				WriteOutTimeSeriesData(ncidts, &param, &obs, &tsobs, 0);
+				status = nc_sync(ncidts);
+				if (status != NC_NOERR)
+					check_netcdf_handle_error(status);
+			}
+			else
+			{
+				fwrite(tsobs.IH[0], sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(tsobs.QH[0], sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(tsobs.IV[0], sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(tsobs.QV[0], sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(tsobs.TxPower1[0], sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(tsobs.TxPower2[0], sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(tsobs.VnotH[0], sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(tsobs.RawLog[0], sizeof(uint16_t), total_samples, tsbinfid);
+			}
 		}
 
 #ifdef HAVE_DISLIN
@@ -1927,8 +1971,11 @@ exit_endacquisition:
 
 	RDQ_ClosePCICARD_New(amcc_fd, &dma_buffer, DMA_BUFFER_SIZE);
 
-	// Close binary time-series data file
-	//fclose(pFile);
+	if (tsbinfid != NULL)
+	{
+		// Close binary time-series data file
+		fclose(tsbinfid);
+	}
 
 	if (tsfid != NULL)
 	{
@@ -1936,17 +1983,20 @@ exit_endacquisition:
 		fclose(tsfid);
 	}
 
-	if (tsdump && !TextTimeSeries)
+	if (tsdump)
 	{
-		printf("About to sync ts.\n");
-		status = nc_sync(ncidts);
-		if (status != NC_NOERR)
-			check_netcdf_handle_error(status);
-		printf("About to close ts.\n");
-		status = nc_close(ncidts);
-		printf("Status = %d\n", status);
-		if (status != NC_NOERR)
-			check_netcdf_handle_error(status);
+		if (NetCDFTimeSeries)
+		{
+			printf("About to sync ts.\n");
+			status = nc_sync(ncidts);
+			if (status != NC_NOERR)
+				check_netcdf_handle_error(status);
+			printf("About to close ts.\n");
+			status = nc_close(ncidts);
+			printf("Status = %d\n", status);
+			if (status != NC_NOERR)
+				check_netcdf_handle_error(status);
+		}
 		free(tsobs.IH);
 	}
 
