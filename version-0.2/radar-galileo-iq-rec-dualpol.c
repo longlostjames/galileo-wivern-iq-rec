@@ -1485,11 +1485,11 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				fwrite(param.pulses_per_ray, sizeof(int), 1, tsbinfid);
-				fwrite(param.samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
-				fwrite(param.divfactor, sizeof(int), 1, tsbinfid);
-				fwrite(param.delay_clocks, sizeof(int), 1, tsbinfid);
-				fwrite(param.ADC_channels, sizeof(int), 1, tsbinfid);
+				fwrite(&param->pulses_per_ray, sizeof(int), 1, tsbinfid);
+				fwrite(&param->samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
+				fwrite(&param->divfactor, sizeof(int), 1, tsbinfid);
+				fwrite(&param->delay_clocks, sizeof(int), 1, tsbinfid);
+				fwrite(&param->ADC_channels, sizeof(int), 1, tsbinfid);
 		}
 	}
 
