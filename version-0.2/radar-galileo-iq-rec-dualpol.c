@@ -1853,14 +1853,14 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				fwrite(tsobs.IH[0], sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(tsobs.QH[0], sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(tsobs.IV[0], sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(tsobs.QV[0], sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(tsobs.TxPower1[0], sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(tsobs.TxPower2[0], sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(tsobs.VnotH[0], sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(tsobs.RawLog[0], sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(I_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(Q_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(I_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(Q_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(&tsobs.TxPower1, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(&tsobs.TxPower2, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(&tsobs.VnotH, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(&tsobs.RawLog, sizeof(uint16_t), total_samples, tsbinfid);
 			}
 		}
 
