@@ -1490,7 +1490,7 @@ int main(int argc, char *argv[])
 				fwrite(&param.samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
 				fwrite(&param.clock_divfactor, sizeof(int), 1, tsbinfid);
 				fwrite(&param.delay_clocks, sizeof(int), 1, tsbinfid);
-				fwrite(&param,ADC_channels, sizeof(int), 1, tsbinfid);
+				fwrite(&param.ADC_channels, sizeof(int), 1, tsbinfid);
 		}
 	}
 
