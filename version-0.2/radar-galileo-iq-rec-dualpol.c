@@ -1746,13 +1746,13 @@ int main(int argc, char *argv[])
 		{
 			printf("About to fwrite ray number\n");
 			fwrite(&obs.ray_number, sizeof(int), 1, tsbinfid);
-			printf("Completed fwrite ray number\n");
-
 			fwrite(&obs.azimuth, sizeof(float), 1, tsbinfid);
 			fwrite(&obs.elevation, sizeof(float), 1, tsbinfid);
 			unsigned short sizeofstring = strlen(datestring) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 			fwrite(&datestring, sizeof(char), sizeofstring, tsbinfid);
+			printf("Completed fwrite datestring\n");
+
 		}
 
 		/* Start of loop over spectra */
