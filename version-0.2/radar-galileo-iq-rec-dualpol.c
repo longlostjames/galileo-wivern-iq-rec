@@ -949,6 +949,8 @@ int main(int argc, char *argv[])
 	// time_t temp_time_t;
 	//  struct tm *time_ptr;
 	char datestring[25];
+	char tmp_string[25];
+	unsigned short sizeofstring;
 
 	// float * uncoded_mean_vsq; // Used in sigma vbar calculation
 	// float * uncoded_mean_Zsq; // Used in sigma Zbar calculation
@@ -1745,13 +1747,27 @@ int main(int argc, char *argv[])
 
 		if (tsbinfid != NULL)
 		{
+			tmp_string = "ray_number";
+			sizeofstring = strlen(tmp_string) + 1;
+			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+			fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 			fwrite(&obs.ray_number, sizeof(int), 1, tsbinfid);
+
+			tmp_string = "azimuth";
+			sizeofstring = strlen(tmp_string) + 1;
+			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+			fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 			fwrite(&obs.azimuth, sizeof(float), 1, tsbinfid);
+
+			tmp_string = "elevation";
+			sizeofstring = strlen(tmp_string) + 1;
+			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+			fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 			fwrite(&obs.elevation, sizeof(float), 1, tsbinfid);
-			unsigned short sizeofstring = strlen(datestring) + 1;
+
+			sizeofstring = strlen(datestring) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 			fwrite(&datestring, sizeof(char), sizeofstring, tsbinfid);
-
 		}
 
 		/* Start of loop over spectra */
@@ -1855,13 +1871,52 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
+				tmp_string = "I_uncoded_H";
+				sizeofstring = strlen(tmp_string) + 1;
+				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(I_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
+
+				tmp_string = "Q_uncoded_H";
+				sizeofstring = strlen(tmp_string) + 1;
+				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(Q_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
+
+				tmp_string = "I_uncoded_V";
+				sizeofstring = strlen(tmp_string) + 1;
+				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(I_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
+
+				tmp_string = "Q_uncoded_V";
+				sizeofstring = strlen(tmp_string) + 1;
+				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(Q_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
+
+				tmp_string = "TX1data";
+				sizeofstring = strlen(tmp_string) + 1;
+				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(TX1data, sizeof(uint16_t), total_samples, tsbinfid);
+
+				tmp_string = "TX2data";
+				sizeofstring = strlen(tmp_string) + 1;
+				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(TX2data, sizeof(uint16_t), total_samples, tsbinfid);
+				
+				tmp_string = "V_not_H";
+				sizeofstring = strlen(tmp_string) + 1;
+				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(V_not_H, sizeof(uint16_t), total_samples, tsbinfid);
+
+				tmp_string = "log_raw";
+				sizeofstring = strlen(tmp_string) + 1;
+				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
+				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(log_raw, sizeof(uint16_t), total_samples, tsbinfid);
 			}
 		}
