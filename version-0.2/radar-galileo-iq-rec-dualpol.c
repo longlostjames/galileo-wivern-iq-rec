@@ -1485,7 +1485,6 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				printf("About to fwrite\n");
 				int int_value = num_pulses * param.pulses_per_daq_cycle;
 				fwrite(&int_value, sizeof(int), 1, tsbinfid);
 				fwrite(&param.samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
@@ -1745,6 +1744,7 @@ int main(int argc, char *argv[])
 
 		if (tsbinfid != NULL)
 		{
+			printf("About to fwrite ray number\n");
 			fwrite(&obs.ray_number, sizeof(int), 1, tsbinfid);
 			fwrite(&obs.azimuth, sizeof(float), 1, tsbinfid);
 			fwrite(&obs.elevation, sizeof(float), 1, tsbinfid);
