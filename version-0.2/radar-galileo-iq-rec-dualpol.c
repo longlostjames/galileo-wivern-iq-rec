@@ -948,7 +948,7 @@ int main(int argc, char *argv[])
 	// time_t spectra_rapid_time = 0;
 	// time_t temp_time_t;
 	//  struct tm *time_ptr;
-	char datestring[28];
+	char datestring[25];
 
 	// float * uncoded_mean_vsq; // Used in sigma vbar calculation
 	// float * uncoded_mean_Zsq; // Used in sigma Zbar calculation
@@ -1521,9 +1521,9 @@ int main(int argc, char *argv[])
 	obs.centisecond = (int)tv.tv_usec / 10000;
 
 
-	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
+	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
 			obs.year, obs.month, obs.day,
-			obs.hour, obs.minute, obs.second, obs.centisecond*10000);
+			obs.hour, obs.minute, obs.second, obs.centisecond);
 	printf("Ray start: %s\n", datestring);
 
 	RDQ_StartAcquisition(amcc_fd, dma_bank,
@@ -1665,9 +1665,9 @@ int main(int argc, char *argv[])
 		obs.second = tm.tm_sec;
 		obs.centisecond = (int)tv.tv_usec / 10000;
 
-		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
+		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
 				obs.year, obs.month, obs.day,
-				obs.hour, obs.minute, obs.second, obs.centisecond*10000);
+				obs.hour, obs.minute, obs.second, obs.centisecond);
 		printf("Ray end: %s\n", datestring);
 
 		/* Swap around the areas used for storing daq and processing from */
@@ -1694,9 +1694,9 @@ int main(int argc, char *argv[])
 		obs.second = tm.tm_sec;
 		obs.centisecond = (int)tv.tv_usec / 10000;
 
-		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
+		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
 				obs.year, obs.month, obs.day,
-				obs.hour, obs.minute, obs.second, obs.centisecond*10000);
+				obs.hour, obs.minute, obs.second, obs.centisecond);
 		printf("Ray start: %s\n", datestring);
 
 		/* obtain dish time */
