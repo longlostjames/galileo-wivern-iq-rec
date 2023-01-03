@@ -91,7 +91,6 @@ RTS_OpenTSFile (const char * radar_name,
     return fopen (ts_pathfile, "w");
 }
 
-FILE *fp = fopen("mybinfile.ttt", "wb");
 
 FILE *
 RTS_OpenTSFileBinary (const char * radar_name,
