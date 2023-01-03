@@ -1748,7 +1748,7 @@ int main(int argc, char *argv[])
 			fwrite(obs.elevation, sizeof(float), 1, tsbinfid);
 			unsigned short sizeofstring = strlen(datestring) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
-			fwrite(datesstring, sizeof(char), sizeofstring, tsbinfid);
+			fwrite(datestring, sizeof(char), sizeofstring, tsbinfid);
 		}	
 
 		/* Start of loop over spectra */
