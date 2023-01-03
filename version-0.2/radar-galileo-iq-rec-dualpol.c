@@ -1485,8 +1485,9 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
+				printf("About to fwrite\n");
 				int int_value = num_pulses * param.pulses_per_daq_cycle;
-				//fwrite(&int_value, sizeof(int), 1, tsbinfid);
+				fwrite(&int_value, sizeof(int), 1, tsbinfid);
 				fwrite(&param.samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
 				fwrite(&param.clock_divfactor, sizeof(int), 1, tsbinfid);
 				fwrite(&param.delay_clocks, sizeof(int), 1, tsbinfid);
