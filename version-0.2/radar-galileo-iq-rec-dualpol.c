@@ -1425,7 +1425,7 @@ int main(int argc, char *argv[])
 		obs.elevation = scan.min_angle;
 	}
 
-	//RDQ_StartAcquisition(amcc_fd, dma_bank,
+	// RDQ_StartAcquisition(amcc_fd, dma_bank,
 	//					 (short *)dma_banks[dma_bank], tcount);
 
 	if (tsdump)
@@ -1475,7 +1475,7 @@ int main(int argc, char *argv[])
 		{
 			/* Setup binary time-series dump file */
 			tsbinfid = RTS_OpenTSFileBinary(GetRadarName(GALILEO), scan.date, host_ext,
-								   GetScanTypeName(scan.scanType));
+											GetScanTypeName(scan.scanType));
 
 			if (tsbinfid == NULL)
 			{
@@ -1491,6 +1491,7 @@ int main(int argc, char *argv[])
 				fwrite(&param.clock_divfactor, sizeof(int), 1, tsbinfid);
 				fwrite(&param.delay_clocks, sizeof(int), 1, tsbinfid);
 				fwrite(&param.ADC_channels, sizeof(int), 1, tsbinfid);
+			}
 		}
 	}
 
@@ -1546,8 +1547,8 @@ int main(int argc, char *argv[])
 		{
 			/* Wait for acquisition to complete before setting new mode */
 			/* CJW: commented out as this if statement will not be accessed for ray 0 */
-			//status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
-			//if (status != 0)
+			// status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
+			// if (status != 0)
 			//	printf("There was a problem in WaitForAcquisitionToComplete\n");
 
 			/* Swap around the areas used for storing data and processing from */
@@ -1592,7 +1593,6 @@ int main(int argc, char *argv[])
 			}
 #endif /* NO_DIO */
 			new_mode = -1;
-
 		}
 
 #if 0
@@ -1714,10 +1714,10 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			//struct tm tm;
-			//struct timeval tv;
-			//gettimeofday(&tv, NULL);
-			//gmtime_r(&tv.tv_sec, &tm);
+			// struct tm tm;
+			// struct timeval tv;
+			// gettimeofday(&tv, NULL);
+			// gmtime_r(&tv.tv_sec, &tm);
 			obs.dish_year = tm.tm_year + 1900;
 			obs.dish_month = tm.tm_mon + 1;
 			obs.dish_day = tm.tm_mday;
@@ -1740,7 +1740,7 @@ int main(int argc, char *argv[])
 			fprintf(tsfid, "Date_time: %s\n", datestring);
 			fprintf(tsfid, "Az: %7.2f, El: %7.2f\n",
 					obs.azimuth, obs.elevation);
-		}	
+		}
 
 		if (tsbinfid != NULL)
 		{
@@ -1750,7 +1750,7 @@ int main(int argc, char *argv[])
 			unsigned short sizeofstring = strlen(datestring) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 			fwrite(&datestring, sizeof(char), sizeofstring, tsbinfid);
-		}	
+		}
 
 		/* Start of loop over spectra */
 		for (int idx = nspectra = 0; nspectra < param.spectra_averaged; nspectra++)
@@ -1891,7 +1891,7 @@ int main(int argc, char *argv[])
 		 * e.g. hourly files                                                  *
 		 *--------------------------------------------------------------------*/
 		system_time = time(NULL);
-		gmtime_r (&system_time, &tm);
+		gmtime_r(&system_time, &tm);
 		if (tm.tm_hour != obs.hour)
 		{
 			printf("***** New hour rollover detected.\n");
@@ -2097,19 +2097,19 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 	/****************************************************************************
 	 * define pulses dimension
 	 ****************************************************************************/
-	//status = nc_def_dim(ncid, "pulses",
+	// status = nc_def_dim(ncid, "pulses",
 	//					param->pulses_per_daq_cycle * param->spectra_averaged,
 	//					&dims[1]);
-	//if (status != NC_NOERR)
+	// if (status != NC_NOERR)
 	//	check_netcdf_handle_error(status);
 
 	/****************************************************************************
 	 * define samples dimension
 	 ****************************************************************************/
-	//status = nc_def_dim(ncid, "samples",
+	// status = nc_def_dim(ncid, "samples",
 	//					param->samples_per_pulse_ts,
 	//					&dims[2]);
-	//if (status != NC_NOERR)
+	// if (status != NC_NOERR)
 	//	check_netcdf_handle_error(status);
 
 	dims[0] = dimensions->time_dim;
