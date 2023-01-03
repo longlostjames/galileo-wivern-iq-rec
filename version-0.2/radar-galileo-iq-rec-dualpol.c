@@ -1520,9 +1520,10 @@ int main(int argc, char *argv[])
 	obs.second = tm.tm_sec;
 	obs.centisecond = (int)tv.tv_usec / 10000;
 
+
 	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
 			obs.year, obs.month, obs.day,
-			obs.hour, obs.minute, obs.second, obs.centisecond);
+			obs.hour, obs.minute, obs.second, obs.centisecond*10000);
 	printf("Ray start: %s\n", datestring);
 
 	RDQ_StartAcquisition(amcc_fd, dma_bank,
@@ -1666,7 +1667,7 @@ int main(int argc, char *argv[])
 
 		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
 				obs.year, obs.month, obs.day,
-				obs.hour, obs.minute, obs.second, obs.centisecond);
+				obs.hour, obs.minute, obs.second, obs.centisecond*10000);
 		printf("Ray end: %s\n", datestring);
 
 		/* Swap around the areas used for storing daq and processing from */
@@ -1695,7 +1696,7 @@ int main(int argc, char *argv[])
 
 		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
 				obs.year, obs.month, obs.day,
-				obs.hour, obs.minute, obs.second, obs.centisecond);
+				obs.hour, obs.minute, obs.second, obs.centisecond*10000);
 		printf("Ray start: %s\n", datestring);
 
 		/* obtain dish time */
