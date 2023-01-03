@@ -134,7 +134,7 @@ static bool debug = false;
 static bool swap_iq_channels = false;
 static bool tsdump = true;
 static bool TextTimeSeries = false;
-static bool NetCDFTimeSeries = true;
+static bool NetCDFTimeSeries = false;
 
 /* Disable position message for fixed position operation */
 static bool positionMessageAct = false; // default is OFF
