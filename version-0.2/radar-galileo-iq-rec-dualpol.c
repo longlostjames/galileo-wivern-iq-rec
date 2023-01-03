@@ -1747,19 +1747,19 @@ int main(int argc, char *argv[])
 
 		if (tsbinfid != NULL)
 		{
-			tmp_string = "ray_number";
+			sprintf(tmp_string, "ray_number");
 			sizeofstring = strlen(tmp_string) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 			fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 			fwrite(&obs.ray_number, sizeof(int), 1, tsbinfid);
 
-			tmp_string = "azimuth";
+			sprintf(tmp_string, "azimuth");
 			sizeofstring = strlen(tmp_string) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 			fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 			fwrite(&obs.azimuth, sizeof(float), 1, tsbinfid);
 
-			tmp_string = "elevation";
+			sprintf(tmp_string, "elevation");
 			sizeofstring = strlen(tmp_string) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 			fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
@@ -1871,49 +1871,49 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				tmp_string = "I_uncoded_H";
+				sprintf(tmp_string, "I_uncoded_H");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(I_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
 
-				tmp_string = "Q_uncoded_H";
+				sprintf(tmp_string, "Q_uncoded_H");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(Q_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
 
-				tmp_string = "I_uncoded_V";
+				sprintf(tmp_string, "I_uncoded_V");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(I_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
 
-				tmp_string = "Q_uncoded_V";
+				sprintf(tmp_string, "Q_uncoded_V");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(Q_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
 
-				tmp_string = "TX1data";
+				sprintf(tmp_string, "TX1data");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(TX1data, sizeof(uint16_t), total_samples, tsbinfid);
 
-				tmp_string = "TX2data";
+				sprintf(tmp_string, "TX2data");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(TX2data, sizeof(uint16_t), total_samples, tsbinfid);
 				
-				tmp_string = "V_not_H";
+				sprintf(tmp_string, "V_not_H");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(V_not_H, sizeof(uint16_t), total_samples, tsbinfid);
 
-				tmp_string = "log_raw";
+				sprintf(tmp_string, "log_raw");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
