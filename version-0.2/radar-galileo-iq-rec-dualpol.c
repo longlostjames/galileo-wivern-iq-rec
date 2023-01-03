@@ -948,7 +948,7 @@ int main(int argc, char *argv[])
 	// time_t spectra_rapid_time = 0;
 	// time_t temp_time_t;
 	//  struct tm *time_ptr;
-	char datestring[25];
+	char datestring[28];
 
 	// float * uncoded_mean_vsq; // Used in sigma vbar calculation
 	// float * uncoded_mean_Zsq; // Used in sigma Zbar calculation
@@ -1520,7 +1520,7 @@ int main(int argc, char *argv[])
 	obs.second = tm.tm_sec;
 	obs.centisecond = (int)tv.tv_usec / 10000;
 
-	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
+	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
 			obs.year, obs.month, obs.day,
 			obs.hour, obs.minute, obs.second, obs.centisecond);
 	printf("Ray start: %s\n", datestring);
@@ -1664,7 +1664,7 @@ int main(int argc, char *argv[])
 		obs.second = tm.tm_sec;
 		obs.centisecond = (int)tv.tv_usec / 10000;
 
-		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
+		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
 				obs.year, obs.month, obs.day,
 				obs.hour, obs.minute, obs.second, obs.centisecond);
 		printf("Ray end: %s\n", datestring);
@@ -1693,7 +1693,7 @@ int main(int argc, char *argv[])
 		obs.second = tm.tm_sec;
 		obs.centisecond = (int)tv.tv_usec / 10000;
 
-		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
+		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%06d",
 				obs.year, obs.month, obs.day,
 				obs.hour, obs.minute, obs.second, obs.centisecond);
 		printf("Ray start: %s\n", datestring);
@@ -1744,14 +1744,12 @@ int main(int argc, char *argv[])
 
 		if (tsbinfid != NULL)
 		{
-			printf("About to fwrite ray number\n");
 			fwrite(&obs.ray_number, sizeof(int), 1, tsbinfid);
 			fwrite(&obs.azimuth, sizeof(float), 1, tsbinfid);
 			fwrite(&obs.elevation, sizeof(float), 1, tsbinfid);
 			unsigned short sizeofstring = strlen(datestring) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 			fwrite(&datestring, sizeof(char), sizeofstring, tsbinfid);
-			printf("Completed fwrite datestring now\n");
 
 		}
 
@@ -1860,13 +1858,10 @@ int main(int argc, char *argv[])
 				fwrite(Q_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
 				fwrite(I_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
 				fwrite(Q_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
-				printf("Completed fwrite of I and Q\n");
 				fwrite(TX1data, sizeof(uint16_t), total_samples, tsbinfid);
 				fwrite(TX2data, sizeof(uint16_t), total_samples, tsbinfid);
 				fwrite(V_not_H, sizeof(uint16_t), total_samples, tsbinfid);
 				fwrite(log_raw, sizeof(uint16_t), total_samples, tsbinfid);
-				printf("Completed fwrite of I and Q\n");
-
 			}
 		}
 
