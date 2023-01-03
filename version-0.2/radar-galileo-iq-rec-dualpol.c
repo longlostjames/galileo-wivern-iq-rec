@@ -1861,10 +1861,12 @@ int main(int argc, char *argv[])
 				fwrite(I_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
 				fwrite(Q_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
 				printf("Completed fwrite of I and Q\n");
-				fwrite(&tsobs.TxPower1, sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(&tsobs.TxPower2, sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(&tsobs.VnotH, sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(&tsobs.RawLog, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(TX1data, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(TX2data, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(VnotH, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(RawLog, sizeof(uint16_t), total_samples, tsbinfid);
+				printf("Completed fwrite of I and Q\n");
+
 			}
 		}
 
