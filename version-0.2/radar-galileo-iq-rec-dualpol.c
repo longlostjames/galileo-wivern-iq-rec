@@ -1863,8 +1863,8 @@ int main(int argc, char *argv[])
 				printf("Completed fwrite of I and Q\n");
 				fwrite(TX1data, sizeof(uint16_t), total_samples, tsbinfid);
 				fwrite(TX2data, sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(VnotH, sizeof(uint16_t), total_samples, tsbinfid);
-				fwrite(RawLog, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(V_not_H, sizeof(uint16_t), total_samples, tsbinfid);
+				fwrite(log_raw, sizeof(uint16_t), total_samples, tsbinfid);
 				printf("Completed fwrite of I and Q\n");
 
 			}
