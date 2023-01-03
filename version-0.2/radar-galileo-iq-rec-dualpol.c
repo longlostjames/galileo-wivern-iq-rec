@@ -1751,7 +1751,7 @@ int main(int argc, char *argv[])
 			unsigned short sizeofstring = strlen(datestring) + 1;
 			fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 			fwrite(&datestring, sizeof(char), sizeofstring, tsbinfid);
-			printf("Completed fwrite datestring\n");
+			printf("Completed fwrite datestring now\n");
 
 		}
 
