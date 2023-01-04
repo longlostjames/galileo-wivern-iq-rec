@@ -505,7 +505,16 @@ parseargs(int argc, char *argv[], RSP_ParamStruct *param, URC_ScanStruct *scan, 
 			 * ------------------ */
 			tsdump = true;
 			TextTimeSeries = true;
-			printf("Time series recording on");
+			printf("Text time series recording on");
+		}
+		else if (!strcmp(argv[i], "-tsdump.nc"))
+		{
+			/* ------------------ *
+			 * TIME SERIES SWITCH *
+			 * ------------------ */
+			tsdump = true;
+			NetCDFTimeSeries = true;
+			printf("NetCDF time series recording on");
 		}
 		else if (!strcmp(argv[i], "-tssamples"))
 		{
