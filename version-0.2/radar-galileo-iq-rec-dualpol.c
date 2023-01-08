@@ -161,7 +161,7 @@ static void sig_handler(int sig);
 
 static void SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid,
 									 RSP_ParamStruct *param, URC_ScanStruct *scan,
-			6461						 RNC_DimensionStruct *dimensions,
+									 RNC_DimensionStruct *dimensions,
 									 RSP_ObservablesStruct *posobs);
 
 static void WriteTimeSeriesBinaryHeader(FILE *tsbinfid, struct timespec *tspec, int radar,
@@ -1567,7 +1567,7 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				WriteTimeSeriesBinaryHeader(tsbinfid, &tspec, GALILEO, &param, argc, argv);
+				WriteTimeSeriesBinaryHeader(tsbinfid, &tspec, GALILEO, &scan, &param, argc, argv);
 
 				//int int_value = num_pulses * param.pulses_per_daq_cycle;
 				//fwrite(&int_value, sizeof(int), 1, tsbinfid);
