@@ -129,6 +129,7 @@ void fwrite_uint32(fid, uint16_t val)
 	fwrite((char *)bytes, 4);
 }
 
+#if 0
 typedef struct TimeSeriesBinaryHeader_t
 {
 	char[10] file_signature = "chilrad-ts";
@@ -153,6 +154,7 @@ typedef struct TimeSeriesBinaryHeader_t
 								string_str longitude_units "arcsecond_east"
 
 } TimeSeriesBinaryFileHeader_t;
+#endif
 
 static void sig_handler(int sig);
 
