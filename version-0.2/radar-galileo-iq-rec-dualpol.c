@@ -176,7 +176,7 @@ static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 								   RSP_ObservablesStruct *posobs,
 								   TimeSeriesObs_t *obs, int moment);
 
-static void WriteOutTimeSeriesDataBinary(int ncid, const RSP_ParamStruct *param,
+static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *param,
 								   RSP_ObservablesStruct *posobs,
 								   TimeSeriesObs_t *obs, int moment);
 
@@ -2650,7 +2650,7 @@ static void WriteTimeSeriesBinaryHeader(FILE *tsbinfid, struct timespec *tspec, 
 }
 
 
-static void WriteOutTimeSeriesDataBinary(int tsbinfid, const RSP_ParamStruct *param,
+static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *param,
 								   RSP_ObservablesStruct *posobs,
 								   TimeSeriesObs_t *obs, int nm)
 {
