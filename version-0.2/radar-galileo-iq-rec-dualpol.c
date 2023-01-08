@@ -98,6 +98,62 @@ typedef struct TimeSeriesObs_t
 	uint16_t *RawLog;
 } TimeSeriesObs_t;
 
+
+typedef struct StringStruct_t
+{
+	uint32_t len;
+	char *string;
+} StringStruct_t;
+
+StringStruct_t InitialiseString(char * string)
+{
+	uint32_t stringsize = strlen(string)+1;
+	char
+}
+
+void fwrite_uint16(fid, uint16_t val)
+{
+	uint8_t bytes[2];
+	bytes[0] = (val)&0xFF;		  // low byte
+	bytes[1] = (val >> 8) & 0xFF; // high byte
+	fwrite((char *)bytes, 2);
+}
+
+void fwrite_uint32(fid, uint16_t val)
+{
+	uint8_t bytes[4];
+	bytes[0] = (val) & 0xFF;
+	bytes[1] = (val >> 8) & 0xFF;
+	bytes[2] = (val >> 16) & 0xFF;
+	bytes[3] = (val >> 24) & 0xFF;
+	fwrite((char *)bytes, 4);
+}
+
+typedef struct TimeSeriesBinaryHeader_t
+{
+	char[10] file_signature = "chilrad-ts";
+	uint16_t major_version;
+	uint16_t minor_version;
+	string_str file_creation_timestamp;
+	string_str radar = {};
+	string_str history;
+	string_str scantype;
+	string_str operator;
+	string_str project_name;
+	string_str project_tag;
+	uint32_t adc_clock;
+	string_str adc_clock_units = "Hz" 
+	u32 adc_channels 8 u32 adc_clock_divfactor 2 u32 adc_delay_clocks 2 u32 adc_bits_per_sample 12 u32 samples_per_pulse 200 u32 pulses_per_ray 6144 u32 pulse_width
+		string_str pulse_width_units "nanosec" u32 radar_frequency 94008000000 string_str radar_frequency_units "Hz" u32 prf 6250 string_str prf_units "Hz" u32 transmit_power 1600 string_str transmit_power_units "watt" u32 antenna_diameter 460 string_str antenna_diameter_units "mm" u32 antenna_focal_length
+			string_str antenna_focal_length_units "mm" u32 beamwidth_h 30 string_str beamwidth_h_units "arcminute" u32 beamwidth_v 30 string_str beamwidth_v_units "arcminute" u32 pulse_offset 20000 string_str pulse_offset_units "nanosecond" u8 alternating_modes 1 u8 long_pulse_mode 0 u8 mode0 6 u8 mode1 3 u32 nrays_mode0 1 u32 nrays_mode1 1 u32 azimuth_offset 0 string_str azimuth_offset_units arcminute
+				u32 elevation_offset 0 string_str elevation_offset_units arcminute
+					u32 antenna_ellipsoidal_altitude 8500 string_str antenna_ellipsoidal_altitude_units "cm" u32 antenna_altitude_agl
+						string_str antenna_altitude_agl_units "mm" u32 latitude
+							string_str latitude_units "arcsecond_north" u32 longitude
+								string_str longitude_units "arcsecond_east"
+
+} TimeSeriesBinaryFileHeader_t;
+
 static void sig_handler(int sig);
 
 static void SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid,
@@ -969,6 +1025,9 @@ int main(int argc, char *argv[])
 	struct tm tm;
 	struct timezone tz;
 
+	struct timespec file_time;
+
+
 	PolPSDStruct *PSD;
 	// PolPSDStruct	PSD[1000];
 	URC_ScanStruct scan;
@@ -1000,7 +1059,7 @@ int main(int argc, char *argv[])
 	int nm;
 
 	// The following are shortcut pointers to the elements of
-	// the obs structure
+	// the tsobs structure
 	uint16_t *I_uncoded_H;
 	uint16_t *Q_uncoded_H;
 	uint16_t *I_uncoded_V;
@@ -1485,6 +1544,10 @@ int main(int argc, char *argv[])
 		else
 		{
 			/* Setup binary time-series dump file */
+			/* get timeofday */
+			struct timespec tspec;
+    		timespec_get(&tspec, TIME_UTC);
+    
 			tsbinfid = RTS_OpenTSFileBinary(GetRadarName(GALILEO), scan.date, host_ext,
 											GetScanTypeName(scan.scanType));
 
@@ -1496,12 +1559,14 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				int int_value = num_pulses * param.pulses_per_daq_cycle;
-				fwrite(&int_value, sizeof(int), 1, tsbinfid);
-				fwrite(&param.samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
-				fwrite(&param.clock_divfactor, sizeof(int), 1, tsbinfid);
-				fwrite(&param.delay_clocks, sizeof(int), 1, tsbinfid);
-				fwrite(&param.ADC_channels, sizeof(int), 1, tsbinfid);
+				WriteTimeSeriesBinaryHeader(tsbinfid, &tspec, GALILEO, &param, argc, argv);
+
+				//int int_value = num_pulses * param.pulses_per_daq_cycle;
+				//fwrite(&int_value, sizeof(int), 1, tsbinfid);
+				//fwrite(&param.samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
+				//fwrite(&param.clock_divfactor, sizeof(int), 1, tsbinfid);
+				//fwrite(&param.delay_clocks, sizeof(int), 1, tsbinfid);
+				//fwrite(&param.ADC_channels, sizeof(int), 1, tsbinfid);
 			}
 		}
 	}
@@ -1530,7 +1595,6 @@ int main(int argc, char *argv[])
 	obs.minute = tm.tm_min;
 	obs.second = tm.tm_sec;
 	obs.centisecond = (int)tv.tv_usec / 10000;
-
 
 	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
 			obs.year, obs.month, obs.day,
@@ -1880,6 +1944,9 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
+				printf("Writing timeseries variables to binary file...\n");
+				WriteOutTimeSeriesDataBinary(tsbinfid, &param, &obs, &tsobs, 0);
+				#if 0
 				sprintf(tmp_string, "I_uncoded_H");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
@@ -1915,7 +1982,7 @@ int main(int argc, char *argv[])
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(TX2data, sizeof(uint16_t), total_samples, tsbinfid);
-				
+
 				sprintf(tmp_string, "V_not_H");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
@@ -1927,6 +1994,7 @@ int main(int argc, char *argv[])
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(log_raw, sizeof(uint16_t), total_samples, tsbinfid);
+				#endif
 			}
 		}
 
@@ -2486,16 +2554,144 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 		check_netcdf_handle_error(status);
 }
 
-static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
+static void WriteTimeSeriesBinaryHeader(int tsbinfid, struct timespec *tspec, int radar,
+										const URC_ScanStruct *scan,
+										const RSP_ParamStruct *param,
+										int argc, char *const argv[])
+{
+	int n;
+
+	uint16_t sizeofstring;
+	uint16_t major_version = 1;
+	uint16_t minor_version = 0;
+	uint16_t revision = 0;
+
+	char buff[1024];
+	char file_timestamp[100];
+	char *pt;
+
+	sprintf(buff, "CHILRAD-TS-%d.%d.%d\n",major_version,minor_version,revision);
+    sizeofstring = strlen(buff)+1;
+    fwrite(&buff, sizeof(char), sizeofstring, tsbinfid);
+
+    long centisec = tspec->tv_nsec/10000000L;
+
+    strftime(file_timestamp, sizeof(file_timestamp), "%F %T", gmtime(&tspec->tv_sec));
+    sprintf(buff, "File created: %s.%02ldZ\n", file_timestamp, centisec);
+    sizeofstring = strlen(buff)+1;
+    fwrite(&buff, sizeof(char), sizeofstring, tsfid);
+
+	sprintf(buff, "radar = %s\n", GetRadarName(GALILEO));
+	sizeofstring = strlen(buff)+1;
+    fwrite(&buff, sizeof(char), sizeofstring, tsfid);
+
+	sprintf(buff, "history = %s\n", GetRadarName(GALILEO));
+	sizeofstring = strlen(buff)+1;
+    fwrite(&buff, sizeof(char), sizeofstring, tsfid);
+
+	/*--------------------------------------------------------------------------*
+     * history                                                                  *
+     *--------------------------------------------------------------------------*/
+    n = sprintf(buff, "history: %sZ\n", file_timestamp);
+
+	if (n < 0) n = 0;
+
+	pt = stpcpy(buff + n, " - ");
+	for (n = 0; n < argc; n++)
+	{
+		pt = stpcpy(pt, argv[n]);
+		pt = stpcpy(pt, " ");
+	}
+
+	sizeofstring = strlen(buff)+1;
+    fwrite(&buff, sizeof(char), sizeofstring, tsfid);
+
+
+	//uint16_t int_value = param->pulses_per_daq_cycle * param->spectra_averaged;
+
+					//int int_value = num_pulses * param.pulses_per_daq_cycle;
+				//fwrite(&int_value, sizeof(int), 1, tsbinfid);
+				//fwrite(&param.samples_per_pulse_ts, sizeof(int), 1, tsbinfid);
+				//fwrite(&param.clock_divfactor, sizeof(int), 1, tsbinfid);
+				//fwrite(&param.delay_clocks, sizeof(int), 1, tsbinfid);
+				//fwrite(&param.ADC_channels, sizeof(int), 1, tsbinfid);
+	
+	/*
+	radar = {};
+	string_str history;
+	string_str scantype;
+	string_str operator;
+	string_str project_name;
+	string_str project_tag;
+	uint32_t adc_clock;
+	string_str adc_clock_units = "Hz" 
+	u32 adc_channels 8 u32 adc_clock_divfactor 2 u32 adc_delay_clocks 2 u32 adc_bits_per_sample 12 u32 samples_per_pulse 200 u32 pulses_per_ray 6144 u32 pulse_width
+		string_str pulse_width_units "nanosec" u32 radar_frequency 94008000000 string_str radar_frequency_units "Hz" u32 prf 6250 string_str prf_units "Hz" u32 transmit_power 1600 string_str transmit_power_units "watt" u32 antenna_diameter 460 string_str antenna_diameter_units "mm" u32 antenna_focal_length
+			string_str antenna_focal_length_units "mm" u32 beamwidth_h 30 string_str beamwidth_h_units "arcminute" u32 beamwidth_v 30 string_str beamwidth_v_units "arcminute" u32 pulse_offset 20000 string_str pulse_offset_units "nanosecond" u8 alternating_modes 1 u8 long_pulse_mode 0 u8 mode0 6 u8 mode1 3 u32 nrays_mode0 1 u32 nrays_mode1 1 u32 azimuth_offset 0 string_str azimuth_offset_units arcminute
+				u32 elevation_offset 0 string_str elevation_offset_units arcminute
+					u32 antenna_ellipsoidal_altitude 8500 string_str antenna_ellipsoidal_altitude_units "cm" u32 antenna_altitude_agl
+						string_str antenna_altitude_agl_units "mm" u32 latitude
+							string_str latitude_units "arcsecond_north" u32 longitude
+								string_str longitude_units "arcsecond_east"
+								*/
+
+}
+
+
+static void WriteOutTimeSeriesDataBinary(int tsbinfid, const RSP_ParamStruct *param,
 								   RSP_ObservablesStruct *posobs,
 								   TimeSeriesObs_t *obs, int nm)
 {
-	size_t variable_count[3];
-	size_t variable_start[3];
-	ptrdiff_t variable_stride[3];
-	ptrdiff_t variable_imap[3];
-	int status;
-	float temp_float;
+	char buffer[255];
+	uint16_t sizeofstring;
+
+	sprintf(buffer, "I_uncoded_H");
+	sizeofstring = strlen(buffer) + 1;
+	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	fwrite(I_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
+
+	sprintf(buffer, "Q_uncoded_H");
+	sizeofstring = strlen(buffer) + 1;
+	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	fwrite(Q_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
+
+	sprintf(buffer, "I_uncoded_V");
+	sizeofstring = strlen(buffer) + 1;
+	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	fwrite(I_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
+
+	sprintf(buffer, "Q_uncoded_V");
+	sizeofstring = strlen(buffer) + 1;
+	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	fwrite(Q_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
+
+	sprintf(buffer, "TX1data");
+	sizeofstring = strlen(buffer) + 1;
+	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	fwrite(TX1data, sizeof(uint16_t), total_samples, tsbinfid);
+
+	sprintf(buffer, "TX2data");
+	sizeofstring = strlen(buffer) + 1;
+	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	fwrite(TX2data, sizeof(uint16_t), total_samples, tsbinfid);
+
+	sprintf(buffer, "V_not_H");
+	sizeofstring = strlen(buffer) + 1;
+	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	fwrite(V_not_H, sizeof(uint16_t), total_samples, tsbinfid);
+
+	sprintf(buffer, "log_raw");
+	sizeofstring = strlen(buffer) + 1;
+	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	fwrite(log_raw, sizeof(uint16_t), total_samples, tsbinfid);
 
 	/*--------------------------------------------------------------------------*
 	 * write time                                                               *
