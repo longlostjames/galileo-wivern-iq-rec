@@ -2587,15 +2587,15 @@ static void WriteTimeSeriesBinaryHeader(FILE *tsbinfid, struct timespec *tspec, 
     strftime(file_timestamp, sizeof(file_timestamp), "%F %T", gmtime(&tspec->tv_sec));
     sprintf(buff, "File created: %s.%02ldZ\n", file_timestamp, centisec);
     sizeofstring = strlen(buff)+1;
-    fwrite(&buff, sizeof(char), sizeofstring, tsfid);
+    fwrite(&buff, sizeof(char), sizeofstring, tsbinfid);
 
 	sprintf(buff, "radar = %s\n", GetRadarName(GALILEO));
 	sizeofstring = strlen(buff)+1;
-    fwrite(&buff, sizeof(char), sizeofstring, tsfid);
+    fwrite(&buff, sizeof(char), sizeofstring, tsbinfid);
 
 	sprintf(buff, "history = %s\n", GetRadarName(GALILEO));
 	sizeofstring = strlen(buff)+1;
-    fwrite(&buff, sizeof(char), sizeofstring, tsfid);
+    fwrite(&buff, sizeof(char), sizeofstring, tsbinfid);
 
 	/*--------------------------------------------------------------------------*
      * history                                                                  *
@@ -2612,7 +2612,7 @@ static void WriteTimeSeriesBinaryHeader(FILE *tsbinfid, struct timespec *tspec, 
 	}
 
 	sizeofstring = strlen(buff)+1;
-    fwrite(&buff, sizeof(char), sizeofstring, tsfid);
+    fwrite(&buff, sizeof(char), sizeofstring, tsbinfid);
 
 
 	//uint16_t int_value = param->pulses_per_daq_cycle * param->spectra_averaged;
