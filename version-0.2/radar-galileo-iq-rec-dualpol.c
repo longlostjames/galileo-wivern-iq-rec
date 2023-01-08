@@ -2831,3 +2831,134 @@ static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *
 		check_netcdf_handle_error(status);
 #endif
 }
+
+static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
+								   RSP_ObservablesStruct *posobs,
+								   TimeSeriesObs_t *obs, int nm)
+{
+	size_t variable_count[3];
+	size_t variable_start[3];
+	ptrdiff_t variable_stride[3];
+	ptrdiff_t variable_imap[3];
+	int status;
+	float temp_float;
+
+	/*--------------------------------------------------------------------------*
+	 * write time                                                               *
+	 *--------------------------------------------------------------------------*/
+	variable_start[0] = posobs->ray_number;
+	temp_float = (((int)posobs->hour * 3600) + ((int)posobs->minute * 60) +
+				  posobs->second + ((float)posobs->centisecond / 100.0));
+	status = nc_put_var1_float(ncid, obs->tsid, variable_start, &temp_float);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	/*--------------------------------------------------------------------------*
+	 * write dish_time                                                          *
+	 *--------------------------------------------------------------------------*/
+	temp_float = (((int)posobs->dish_hour * 3600) +
+				  ((int)posobs->dish_minute * 60) + posobs->dish_second +
+				  ((float)posobs->dish_centisecond / 100.0));
+	status = nc_put_var1_float(ncid, obs->dish_tsid,
+							   variable_start, &temp_float);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	/*--------------------------------------------------------------------------*
+	 * write elevation                                                          *
+	 *--------------------------------------------------------------------------*/
+	status = nc_put_var1_float(ncid, obs->elevationid,
+							   variable_start, &posobs->elevation);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	/*--------------------------------------------------------------------------*
+	 * write azimuth                                                            *
+	 *--------------------------------------------------------------------------*/
+	temp_float = posobs->azimuth + param->azimuth_offset;
+	status = nc_put_var1_float(ncid, obs->azimuthid,
+							   variable_start, &temp_float);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	/*--------------------------------------------------------------------------*
+	 * write radar observables                                                  *
+	 *--------------------------------------------------------------------------*/
+	variable_start[0] = (posobs->ray_number * param->moments_averaged) + nm;
+	variable_start[1] = 0;
+	variable_start[2] = 0;
+	variable_count[0] = 1;
+	variable_count[1] = param->pulses_per_daq_cycle * param->spectra_averaged;
+	variable_count[2] = param->samples_per_pulse_ts;
+	variable_stride[0] = 1;
+	variable_stride[1] = 1;
+	variable_stride[2] = 1;
+	variable_imap[0] = 1;
+	variable_imap[1] = param->samples_per_pulse;
+	variable_imap[2] = 1;
+
+#if 0
+	status = nc_put_varm_short(ncid, obs->ICOHid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->ICOH);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->QCOHid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->QCOH);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->ICXHid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->ICXH);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->QCXHid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->QCXH);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+#endif
+
+	status = nc_put_varm_short(ncid, obs->IHid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->IH);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->QHid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->QH);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->IVid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->IV);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->QVid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->QV);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	status = nc_put_varm_short(ncid, obs->TxPower1id, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->TxPower1);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->TxPower2id, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->TxPower2);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->VnotHid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->VnotH);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+	status = nc_put_varm_short(ncid, obs->RawLogid, variable_start,
+							   variable_count, variable_stride,
+							   variable_imap, (short *)obs->RawLog);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+}
