@@ -164,6 +164,11 @@ static void SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid,
 									 RNC_DimensionStruct *dimensions,
 									 RSP_ObservablesStruct *posobs);
 
+static void WriteTimeSeriesBinaryHeader(int tsbinfid, struct timespec *tspec, int radar,
+										const URC_ScanStruct *scan,
+										const RSP_ParamStruct *param,
+										int argc, char *const argv[])
+
 /* in declaration below the moment variable is for compatibility with
  * possible changes to allow averaging over moments, and would index
  * each moment in the average */
