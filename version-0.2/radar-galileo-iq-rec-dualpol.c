@@ -2657,54 +2657,57 @@ static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *
 	char buffer[255];
 	uint16_t sizeofstring;
 
+    int data_size = param->samples_per_pulse_ts*param->pulses_per_daq_cycle*param->spectra_averaged;
+
 	sprintf(buffer, "I_uncoded_H");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(I_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
+	fwrite(obs->IH, sizeof(uint16_t), data_size, tsbinfid);
 
 	sprintf(buffer, "Q_uncoded_H");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(Q_uncoded_H, sizeof(uint16_t), total_samples, tsbinfid);
+	fwrite(obs->QH, sizeof(uint16_t), data_size, tsbinfid);
 
 	sprintf(buffer, "I_uncoded_V");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(I_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
+	fwrite(obs->IV, sizeof(uint16_t), data_size, tsbinfid);
 
 	sprintf(buffer, "Q_uncoded_V");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(Q_uncoded_V, sizeof(uint16_t), total_samples, tsbinfid);
+	fwrite(obs->QV, sizeof(uint16_t), data_size, tsbinfid);
 
 	sprintf(buffer, "TX1data");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(TX1data, sizeof(uint16_t), total_samples, tsbinfid);
+	fwrite(obs->TxPower1, sizeof(uint16_t), data_size, tsbinfid);
 
 	sprintf(buffer, "TX2data");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(TX2data, sizeof(uint16_t), total_samples, tsbinfid);
+	fwrite(obs->TxPower2, sizeof(uint16_t), data_size, tsbinfid);
 
 	sprintf(buffer, "V_not_H");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(V_not_H, sizeof(uint16_t), total_samples, tsbinfid);
+	fwrite(obs->VnotH, sizeof(uint16_t), data_size, tsbinfid);
 
 	sprintf(buffer, "log_raw");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(log_raw, sizeof(uint16_t), total_samples, tsbinfid);
+	fwrite(obs->RawLog, sizeof(uint16_t), data_size, tsbinfid);
 
+#if 0
 	/*--------------------------------------------------------------------------*
 	 * write time                                                               *
 	 *--------------------------------------------------------------------------*/
@@ -2759,6 +2762,8 @@ static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *
 	variable_imap[1] = param->samples_per_pulse;
 	variable_imap[2] = 1;
 
+#endif
+
 #if 0
 	status = nc_put_varm_short(ncid, obs->ICOHid, variable_start,
 							   variable_count, variable_stride,
@@ -2782,6 +2787,7 @@ static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *
 		check_netcdf_handle_error(status);
 #endif
 
+#if 0
 	status = nc_put_varm_short(ncid, obs->IHid, variable_start,
 							   variable_count, variable_stride,
 							   variable_imap, (short *)obs->IH);
@@ -2823,4 +2829,5 @@ static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *
 							   variable_imap, (short *)obs->RawLog);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
+#endif
 }
