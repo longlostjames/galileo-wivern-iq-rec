@@ -161,10 +161,10 @@ static void sig_handler(int sig);
 
 static void SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid,
 									 RSP_ParamStruct *param, URC_ScanStruct *scan,
-									 RNC_DimensionStruct *dimensions,
+			6461						 RNC_DimensionStruct *dimensions,
 									 RSP_ObservablesStruct *posobs);
 
-static void WriteTimeSeriesBinaryHeader(int tsbinfid, struct timespec *tspec, int radar,
+static void WriteTimeSeriesBinaryHeader(FILE *tsbinfid, struct timespec *tspec, int radar,
 										const URC_ScanStruct *scan,
 										const RSP_ParamStruct *param,
 										int argc, char *const argv[]);
@@ -2562,7 +2562,7 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 		check_netcdf_handle_error(status);
 }
 
-static void WriteTimeSeriesBinaryHeader(int tsbinfid, struct timespec *tspec, int radar,
+static void WriteTimeSeriesBinaryHeader(FILE *tsbinfid, struct timespec *tspec, int radar,
 										const URC_ScanStruct *scan,
 										const RSP_ParamStruct *param,
 										int argc, char *const argv[])
