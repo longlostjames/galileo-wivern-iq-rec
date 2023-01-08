@@ -98,7 +98,7 @@ typedef struct TimeSeriesObs_t
 	uint16_t *RawLog;
 } TimeSeriesObs_t;
 
-
+#if 0
 typedef struct StringStruct_t
 {
 	uint32_t len;
@@ -128,6 +128,7 @@ void fwrite_uint32(fid, uint16_t val)
 	bytes[3] = (val >> 24) & 0xFF;
 	fwrite((char *)bytes, 4);
 }
+#endif
 
 #if 0
 typedef struct TimeSeriesBinaryHeader_t
