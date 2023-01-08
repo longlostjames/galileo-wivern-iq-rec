@@ -2659,6 +2659,8 @@ static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *
 
     int data_size = param->samples_per_pulse_ts*param->pulses_per_daq_cycle*param->spectra_averaged;
 
+	printf("data size = %d\n",data_size);
+
 	sprintf(buffer, "I_uncoded_H");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
