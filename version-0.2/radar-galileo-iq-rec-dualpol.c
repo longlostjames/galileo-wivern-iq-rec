@@ -176,6 +176,10 @@ static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 								   RSP_ObservablesStruct *posobs,
 								   TimeSeriesObs_t *obs, int moment);
 
+static void WriteOutTimeSeriesDataBinary(int ncid, const RSP_ParamStruct *param,
+								   RSP_ObservablesStruct *posobs,
+								   TimeSeriesObs_t *obs, int moment);
+
 #ifdef HAVE_DISLIN
 static float zmat[256][250];
 static int counter_x, counter_y;
