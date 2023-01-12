@@ -1020,7 +1020,7 @@ int main(int argc, char *argv[])
 	int gate_offset;
 	int mode_gate_offset;
 	time_t system_time;
-	// time_t start_time = 0;
+	time_t start_time = 0;
 	// time_t spectra_time = 0;
 	// time_t spectra_rapid_time = 0;
 	// time_t temp_time_t;
@@ -1597,6 +1597,8 @@ int main(int argc, char *argv[])
 	printf("** Starting acquisition...\n");
 
 	/* get timeofday */
+	start_time = time(NULL);
+
 	gettimeofday(&tv, NULL);
 	gmtime_r(&tv.tv_sec, &tm);
 
@@ -2037,10 +2039,16 @@ int main(int argc, char *argv[])
 		 * e.g. hourly files                                                  *
 		 *--------------------------------------------------------------------*/
 		system_time = time(NULL);
-		gmtime_r(&system_time, &tm);
-		if (tm.tm_hour != obs.hour)
+		double scan_duration;
+		scan_duration = difftime(system_time, start_time);
+		//if (tm.tm_hour != obs.hour)
+		//{
+		//	printf("***** New hour rollover detected.\n");
+		//	break; /* Exit loop */
+		//}
+		if (scan_duration>898)
 		{
-			printf("***** New hour rollover detected.\n");
+			printf("***** Default scan duration elapsed.\n");
 			break; /* Exit loop */
 		}
 
@@ -2534,36 +2542,36 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
 
-	obs->TxPower2id = TimeSeriesTemplate(
-		ncid, "TXP2",
-		dims,
-		"External_Tx_Power",
-		"External Tx Power",
-		"counts");
-	status = nc_put_att_double(ncid, obs->TxPower2id,
-							   "mV scale", NC_DOUBLE, 1,
-							   &PowerScale);
-	if (status != NC_NOERR)
-		check_netcdf_handle_error(status);
+	//obs->TxPower2id = TimeSeriesTemplate(
+	//	ncid, "TXP2",
+	//	dims,
+	//	"External_Tx_Power",
+	//	"External Tx Power",
+	//	"");
+	//status = nc_put_att_double(ncid, obs->TxPower2id,
+	//						   "mV scale", NC_DOUBLE, 1,
+	//						   &PowerScale);
+	//if (status != NC_NOERR)
+	//	check_netcdf_handle_error(status);
 
 	obs->VnotHid = TimeSeriesTemplate(
 		ncid, "VnotH",
 		dims,
 		"Pulse_polaration_V_not_H",
 		"Pulse polaration V not H",
-		"counts");
+		"");
 
-	obs->RawLogid = TimeSeriesTemplate(
-		ncid, "LOG",
-		dims,
-		"Raw_Log",
-		"Raw Log",
-		"counts");
-	status = nc_put_att_double(ncid, obs->RawLogid,
-							   "mV scale", NC_DOUBLE, 1,
-							   &PowerScale);
-	if (status != NC_NOERR)
-		check_netcdf_handle_error(status);
+	//obs->RawLogid = TimeSeriesTemplate(
+	//	ncid, "LOG",
+	//	dims,
+	//	"Raw_Log",
+	//	"Raw Log",
+	//	"counts");
+	//status = nc_put_att_double(ncid, obs->RawLogid,
+	//						   "mV scale", NC_DOUBLE, 1,
+	//						   &PowerScale);
+	//if (status != NC_NOERR)
+	//	check_netcdf_handle_error(status);
 }
 
 static void WriteTimeSeriesBinaryHeader(FILE *tsbinfid, struct timespec *tspec, int radar,
@@ -2661,41 +2669,41 @@ static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *
 
 	printf("data size = %d\n",data_size);
 
-	sprintf(buffer, "I_uncoded_H");
+	sprintf(buffer, "IH");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
 	fwrite(obs->IH, sizeof(uint16_t), data_size, tsbinfid);
 
-	sprintf(buffer, "Q_uncoded_H");
+	sprintf(buffer, "QH");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
 	fwrite(obs->QH, sizeof(uint16_t), data_size, tsbinfid);
 
-	sprintf(buffer, "I_uncoded_V");
+	sprintf(buffer, "IV");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
 	fwrite(obs->IV, sizeof(uint16_t), data_size, tsbinfid);
 
-	sprintf(buffer, "Q_uncoded_V");
+	sprintf(buffer, "QV");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
 	fwrite(obs->QV, sizeof(uint16_t), data_size, tsbinfid);
 
-	sprintf(buffer, "TX1data");
+	sprintf(buffer, "TX1POWER");
 	sizeofstring = strlen(buffer) + 1;
 	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
 	fwrite(obs->TxPower1, sizeof(uint16_t), data_size, tsbinfid);
 
-	sprintf(buffer, "TX2data");
-	sizeofstring = strlen(buffer) + 1;
-	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
-	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(obs->TxPower2, sizeof(uint16_t), data_size, tsbinfid);
+	//sprintf(buffer, "TX2POWER");
+	//sizeofstring = strlen(buffer) + 1;
+	//fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	//fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	//fwrite(obs->TxPower2, sizeof(uint16_t), data_size, tsbinfid);
 
 	sprintf(buffer, "V_not_H");
 	sizeofstring = strlen(buffer) + 1;
@@ -2703,11 +2711,11 @@ static void WriteOutTimeSeriesDataBinary(FILE *tsbinfid, const RSP_ParamStruct *
 	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
 	fwrite(obs->VnotH, sizeof(uint16_t), data_size, tsbinfid);
 
-	sprintf(buffer, "log_raw");
-	sizeofstring = strlen(buffer) + 1;
-	fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
-	fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
-	fwrite(obs->RawLog, sizeof(uint16_t), data_size, tsbinfid);
+	//sprintf(buffer, "log_raw");
+	//sizeofstring = strlen(buffer) + 1;
+	//fwrite(&sizeofstring, sizeof(uint16_t), 1, tsbinfid);
+	//fwrite(&buffer, sizeof(char), sizeofstring, tsbinfid);
+	//fwrite(obs->RawLog, sizeof(uint16_t), data_size, tsbinfid);
 
 #if 0
 	/*--------------------------------------------------------------------------*
@@ -2884,6 +2892,15 @@ static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 		check_netcdf_handle_error(status);
 
 	/*--------------------------------------------------------------------------*
+	 * write pulse mode                                                         *
+	 *--------------------------------------------------------------------------*/
+	//temp_float = posobs->azimuth + param->azimuth_offset;
+	//status = nc_put_var1_float(ncid, obs->azimuthid,
+	//						   variable_start, &temp_float);
+	//if (status != NC_NOERR)
+	//	check_netcdf_handle_error(status);
+
+	/*--------------------------------------------------------------------------*
 	 * write radar observables                                                  *
 	 *--------------------------------------------------------------------------*/
 	variable_start[0] = (posobs->ray_number * param->moments_averaged) + nm;
@@ -2948,9 +2965,9 @@ static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 							   variable_imap, (short *)obs->TxPower1);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
-	status = nc_put_varm_short(ncid, obs->TxPower2id, variable_start,
-							   variable_count, variable_stride,
-							   variable_imap, (short *)obs->TxPower2);
+	//status = nc_put_varm_short(ncid, obs->TxPower2id, variable_start,
+	//						   variable_count, variable_stride,
+	//						   variable_imap, (short *)obs->TxPower2);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
 	status = nc_put_varm_short(ncid, obs->VnotHid, variable_start,
@@ -2958,9 +2975,9 @@ static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 							   variable_imap, (short *)obs->VnotH);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
-	status = nc_put_varm_short(ncid, obs->RawLogid, variable_start,
-							   variable_count, variable_stride,
-							   variable_imap, (short *)obs->RawLog);
-	if (status != NC_NOERR)
-		check_netcdf_handle_error(status);
+	//status = nc_put_varm_short(ncid, obs->RawLogid, variable_start,
+	//						   variable_count, variable_stride,
+	//						   variable_imap, (short *)obs->RawLog);
+	//if (status != NC_NOERR)
+	//	check_netcdf_handle_error(status);
 }
