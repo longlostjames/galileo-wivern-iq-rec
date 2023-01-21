@@ -1607,17 +1607,17 @@ int main(int argc, char *argv[])
 	gettimeofday(&tv, NULL);
 	gmtime_r(&tv.tv_sec, &tm);
 
-	obs.year = tm.tm_year + 1900;
-	obs.month = tm.tm_mon + 1;
-	obs.day = tm.tm_mday;
-	obs.hour = tm.tm_hour;
-	obs.minute = tm.tm_min;
-	obs.second = tm.tm_sec;
-	obs.centisecond = (int)tv.tv_usec / 10000;
+	int raystart_year = tm.tm_year + 1900;
+	int raystart_month = tm.tm_mon + 1;
+	int raystart_day = tm.tm_mday;
+	int raystart_hour = tm.tm_hour;
+	int raystart_minute = tm.tm_min;
+	int raystart_second = tm.tm_sec;
+	int raystart_centisecond = (int)tv.tv_usec / 10000;
 
 	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
-			obs.year, obs.month, obs.day,
-			obs.hour, obs.minute, obs.second, obs.centisecond);
+			raystart_year, raystart_month, raystart_day,
+			raystart_hour, raystart_minute, raystart_second, raystart_centisecond);
 	printf("Ray start: %s\n", datestring);
 
 	RDQ_StartAcquisition(amcc_fd, dma_bank,
@@ -1689,6 +1689,9 @@ int main(int argc, char *argv[])
 #endif /* NO_DIO */
 			new_mode = -1;
 		}
+
+		/* store current pulse mode*/
+		obs.pulse_mode = mode;
 
 #if 0
 			/*----------------------------------------------------------------*
@@ -1780,17 +1783,25 @@ int main(int argc, char *argv[])
 		gettimeofday(&tv, NULL);
 		gmtime_r(&tv.tv_sec, &tm);
 
-		obs.year = tm.tm_year + 1900;
-		obs.month = tm.tm_mon + 1;
-		obs.day = tm.tm_mday;
-		obs.hour = tm.tm_hour;
-		obs.minute = tm.tm_min;
-		obs.second = tm.tm_sec;
-		obs.centisecond = (int)tv.tv_usec / 10000;
+		obs.year = raystart_year;
+		obs.month = raystart_month;
+		obs.day = raystart_day;
+		obs.hour = raystart_hour;
+		obs.minute = raystart_minute;
+		obs.second = raystart_second;
+		obs.centisecond = raystart_centisecond;
+
+		raystart_year = tm.tm_year + 1900;
+		raystart_month = tm.tm_mon + 1;
+		raystart_day = tm.tm_mday;
+		raystart_hour = tm.tm_hour;
+		raystart_minute = tm.tm_min;
+		raystart_second = tm.tm_sec;
+		raystart_centisecond = (int)tv.tv_usec / 10000;
 
 		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
-				obs.year, obs.month, obs.day,
-				obs.hour, obs.minute, obs.second, obs.centisecond);
+				raystart_year, raystart_month, raystart_day,
+				raystart_hour, raystart_minute, raystart_second, raystart_centisecond);
 		printf("Ray start: %s\n", datestring);
 
 		/* obtain dish time */
