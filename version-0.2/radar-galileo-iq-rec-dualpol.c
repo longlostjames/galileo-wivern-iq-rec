@@ -1476,6 +1476,9 @@ int main(int argc, char *argv[])
 
 	make_dmux_table(param.ADC_channels, dmux_table);
 
+	/* store current pulse mode*/
+	obs.pulse_mode = mode;
+
 	/* load in current dish_time */
 	if (positionMessageAct)
 	{
