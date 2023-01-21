@@ -185,13 +185,23 @@ typedef struct
     int     dish_second;
     int     dish_centisecond;
     /* */
+    int     rayend_year;
+    int     rayend_month;
+    int     rayend_day;
+    int     rayend_hour;
+    int     rayend_minute;
+    int     rayend_second;
+    int     rayend_centisecond;
+    /* */
     int     ts;
     int     tsid;
     int     dish_tsid;
+    int     rayend_tsid;
     int     ray_number;
     int     PSD_ray_number;
     int     bin_ray_number;
     int     n_obs;
+    int     pulse_mode;
     /* FIXME: Make a structure */
     int     n_elements        [MAX_OBSERVABLES];
     int     varid             [MAX_OBSERVABLES];

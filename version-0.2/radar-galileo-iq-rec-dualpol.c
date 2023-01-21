@@ -79,6 +79,7 @@ typedef struct TimeSeriesObs_t
 	int tsid;
 	int rayend_tsid;
 	int dish_tsid;
+	int pulse_modeid;
 	int IHid;
 	int QHid;
 	int IVid;
@@ -249,6 +250,7 @@ disp_help(const char *prog)
 	// printf (" -rawzed               Switch off range normalisation and calibration for Z\n");
 	// printf (" -spec                 Record power spectra\n");
 	printf(" -tsdump               Dump time series to a binary file\n");
+	printf(" -tsdump.nc           Dump time series to a NetCDF file\n");
 	printf(" -tsdump.txt           Dump time series to a text file\n");
 	printf(" -tssamples <n>        Only dump first <n> time series samples. 20 < n <= <max-gates>\n");
 	printf(" -tsrange <n>          Only dump first <n> km of time series samples. 1.2 < n <= <max-range>\n");
@@ -1093,7 +1095,7 @@ int main(int argc, char *argv[])
 	int newfile = 1;
 	int obtain_index;
 	int store_index;
-	IQStruct IQStruct;
+	//IQStruct IQStruct;
 
 	disp_welcome_message();
 
@@ -1746,17 +1748,17 @@ int main(int argc, char *argv[])
 		gettimeofday(&tv, NULL);
 		gmtime_r(&tv.tv_sec, &tm);
 
-		obs.year = tm.tm_year + 1900;
-		obs.month = tm.tm_mon + 1;
-		obs.day = tm.tm_mday;
-		obs.hour = tm.tm_hour;
-		obs.minute = tm.tm_min;
-		obs.second = tm.tm_sec;
-		obs.centisecond = (int)tv.tv_usec / 10000;
+		obs.rayend_year = tm.tm_year + 1900;
+		obs.rayend_month = tm.tm_mon + 1;
+		obs.rayend_day = tm.tm_mday;
+		obs.rayend_hour = tm.tm_hour;
+		obs.rayend_minute = tm.tm_min;
+		obs.rayend_second = tm.tm_sec;
+		obs.rayend_centisecond = (int)tv.tv_usec / 10000;
 
 		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
-				obs.year, obs.month, obs.day,
-				obs.hour, obs.minute, obs.second, obs.centisecond);
+				obs.rayend_year, obs.rayend_month, obs.rayend_day,
+				obs.rayend_hour, obs.rayend_minute, obs.rayend_second, obs.rayend_centisecond);
 		printf("Ray end: %s\n", datestring);
 
 		/* Swap around the areas used for storing daq and processing from */
@@ -2034,9 +2036,7 @@ int main(int argc, char *argv[])
 #endif /* HAVE_DISLIN */
 
 		/*--------------------------------------------------------------------*
-		 * check to see if we have started a new day                          *
-		 * This should be modified to create new files after a given interval *
-		 * e.g. hourly files                                                  *
+		 * check to see if we have exceeded scan duration for this file       *
 		 *--------------------------------------------------------------------*/
 		system_time = time(NULL);
 		double scan_duration;
@@ -2429,6 +2429,32 @@ SetupTimeSeriesVariables(TimeSeriesObs_t *obs, int ncid, RSP_ParamStruct *param,
 
 	status = nc_put_att_float(ncid, obs->azimuthid, "azimuth_offset",
 							  NC_FLOAT, 1, &param->azimuth_offset);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	/*--------------------------------------------------------------------------*
+	 * pulse_mode definition                                                    *
+	 *--------------------------------------------------------------------------*/
+	status = nc_def_var(ncid, "pulse_mode",
+						NC_SHORT, 1, dims, &obs->pulse_modeid);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	variable = "pulse mode for ray";
+	status = nc_put_att_text(ncid, obs->pulse_modeid, "long_name",
+							 strlen(variable) + 1, variable);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+	//variable = "%.3f";
+	//status = nc_put_att_text(ncid, obs->azimuthid, "C_format",
+	//						 strlen(variable) + 1, variable);
+	//if (status != NC_NOERR)
+	//	check_netcdf_handle_error(status);
+
+	variable = "";
+	status = nc_put_att_text(ncid, obs->pulse_modeid, "units",
+							 strlen(variable) + 1, variable);
 	if (status != NC_NOERR)
 		check_netcdf_handle_error(status);
 
@@ -2875,6 +2901,18 @@ static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 		check_netcdf_handle_error(status);
 
 	/*--------------------------------------------------------------------------*
+	 * write rayend_time                                                        *
+	 *--------------------------------------------------------------------------*/
+	temp_float = (((int)posobs->rayend_hour * 3600) +
+				  ((int)posobs->rayend_minute * 60) + posobs->rayend_second +
+				  ((float)posobs->rayend_centisecond / 100.0));
+	status = nc_put_var1_float(ncid, obs->rayend_tsid,
+							   variable_start, &temp_float);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
+
+
+	/*--------------------------------------------------------------------------*
 	 * write elevation                                                          *
 	 *--------------------------------------------------------------------------*/
 	status = nc_put_var1_float(ncid, obs->elevationid,
@@ -2894,11 +2932,10 @@ static void WriteOutTimeSeriesData(int ncid, const RSP_ParamStruct *param,
 	/*--------------------------------------------------------------------------*
 	 * write pulse mode                                                         *
 	 *--------------------------------------------------------------------------*/
-	//temp_float = posobs->azimuth + param->azimuth_offset;
-	//status = nc_put_var1_float(ncid, obs->azimuthid,
-	//						   variable_start, &temp_float);
-	//if (status != NC_NOERR)
-	//	check_netcdf_handle_error(status);
+	status = nc_put_var1_short(ncid, obs->pulse_modeid,
+							   variable_start, (short *)&posobs->pulse_mode);
+	if (status != NC_NOERR)
+		check_netcdf_handle_error(status);
 
 	/*--------------------------------------------------------------------------*
 	 * write radar observables                                                  *

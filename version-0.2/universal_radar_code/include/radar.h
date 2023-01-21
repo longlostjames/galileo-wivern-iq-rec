@@ -225,7 +225,6 @@ typedef struct
 } IQStruct;
 
 
-
 // This structure is used to address the various pulses in the
 // transmit sequence
 typedef struct

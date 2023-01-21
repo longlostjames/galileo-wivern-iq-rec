@@ -123,11 +123,12 @@ RNC_OpenNetcdfFile (const char * radar_name,
 
     printf ("netCDF creating : %s\n", netcdf_pathfile);
 
-    /* NC_64BIT_OFFSET not available on all systems */
-    status = nc_create (netcdf_pathfile,
-			NC_NOCLOBBER /*| NC_64BIT_OFFSET*/ | NC_SHARE,
-			&ncid);
-    if (status != NC_NOERR) check_netcdf_handle_error (status);
+	/* NC_64BIT_OFFSET not available on all systems */
+	status = nc_create(netcdf_pathfile,
+					   NC_NOCLOBBER /*| NC_64BIT_OFFSET*/ | NC_SHARE,
+					   &ncid);
+	if (status != NC_NOERR)
+	check_netcdf_handle_error(status);
 
 #if 0
     status = nc_create (netcdf_pathfile,
@@ -1394,7 +1395,7 @@ RNC_SetupDynamicVariables (int                         ncid,
     if (status != NC_NOERR) check_netcdf_handle_error (status);
 
     variable = "%.2f";
-    status = nc_put_att_text (ncid, obs->tsid, "C_format",
+    status = nc_put_att_text (ncid, obs->dish_tsid, "C_format",
 			      strlen (variable) + 1, variable);
     if (status != NC_NOERR) check_netcdf_handle_error (status);
 
@@ -1403,6 +1404,36 @@ RNC_SetupDynamicVariables (int                         ncid,
 	     obs->dish_month,
 	     obs->dish_day);
     status = nc_put_att_text (ncid, obs->dish_tsid, "units",
+			      strlen (buffer) + 1, buffer);
+    if (status != NC_NOERR) check_netcdf_handle_error (status);
+
+	/*--------------------------------------------------------------------------*
+     * rayend_time definition                                                   *
+     *--------------------------------------------------------------------------*/
+    status = nc_def_var (ncid, "rayend_time",
+			 NC_FLOAT, 1, variable_shape, &obs->rayend_tsid);
+    if (status != NC_NOERR) check_netcdf_handle_error (status);
+
+    variable = "rayend_time";
+    status = nc_put_att_text (ncid, obs->rayend_tsid, "chilbolton_standard_name",
+			      strlen (variable) + 1, variable);
+    if (status != NC_NOERR) check_netcdf_handle_error (status);
+
+    variable = "rayend_time";
+    status = nc_put_att_text (ncid, obs->rayend_tsid, "long_name",
+			      strlen (variable) + 1, variable);
+    if (status != NC_NOERR) check_netcdf_handle_error (status);
+
+    variable = "%.2f";
+    status = nc_put_att_text (ncid, obs->rayend_tsid, "C_format",
+			      strlen (variable) + 1, variable);
+    if (status != NC_NOERR) check_netcdf_handle_error (status);
+
+    sprintf (buffer, "seconds since %04d-%02d-%02d 00:00:00 +00:00",
+	     obs->rayend_year,
+	     obs->rayend_month,
+	     obs->rayend_day);
+    status = nc_put_att_text (ncid, obs->rayend_tsid, "units",
 			      strlen (buffer) + 1, buffer);
     if (status != NC_NOERR) check_netcdf_handle_error (status);
 
