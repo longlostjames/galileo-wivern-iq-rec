@@ -2108,6 +2108,7 @@ int main(int argc, char *argv[])
 			break; /* Exit loop */
 		}
 
+#if 0
 		if (positionMessageAct)
 		{
 			/* Read position message again */
@@ -2137,6 +2138,7 @@ int main(int argc, char *argv[])
 			obs.dish_second = tm.tm_sec;
 			obs.dish_centisecond = tv.tv_usec / 10000U;
 		}
+#endif
 
 		/* Test for end of scan */
 		if (positionMessageAct || scan.scanType == SCAN_SGL)
