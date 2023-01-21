@@ -1615,10 +1615,46 @@ int main(int argc, char *argv[])
 	int raystart_second = tm.tm_sec;
 	int raystart_centisecond = (int)tv.tv_usec / 10000;
 
+	int raystart_dish_year, raystart_dish_month, raystart_dish_day;
+	int raystart_dish_hour, raystart_dish_minute, raystart_dish_second;
+	int raystart_dish_centisecond;
+	float raystart_azimuth, raystart_elevation;
+
+	/* obtain dish time */
+	if (positionMessageAct)
+	{
+		RSM_ReadPositionMessage(&position_msg);
+		raystart_azimuth = position_msg.az;
+		raystart_elevation = position_msg.el;
+		raystart_dish_year = position_msg.year;
+		raystart_dish_month = position_msg.month;
+		raystart_dish_day = position_msg.day;
+		raystart_dish_hour = position_msg.hour;
+		raystart_dish_minute = position_msg.min;
+		raystart_dish_second = position_msg.sec;
+		raystart_dish_centisecond = position_msg.centi_sec;
+	}
+	else
+	{
+		raystart_dish_year = raystart_year;
+		raystart_dish_month = raystart_month;
+		raystart_dish_day = raystart_day;
+		raystart_dish_hour = raystart_hour;
+		raystart_dish_minute = raystart_minute;
+		raystart_dish_second = raystart_second;
+		raystart_dish_centisecond = raystart_centisecond;
+
+		raystart_azimuth = scan.scan_angle;
+		raystart_elevation = scan.min_angle;
+	}
+
 	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
 			raystart_year, raystart_month, raystart_day,
 			raystart_hour, raystart_minute, raystart_second, raystart_centisecond);
 	printf("Ray start: %s\n", datestring);
+
+	printf("Az = %5.2f, El = %5.2f",raystart_azimuth,raystart_elevation);
+
 
 	RDQ_StartAcquisition(amcc_fd, dma_bank,
 						 (short *)(dma_banks[dma_bank]), tcount);
@@ -1791,6 +1827,16 @@ int main(int argc, char *argv[])
 		obs.second = raystart_second;
 		obs.centisecond = raystart_centisecond;
 
+		obs.dish_year = raystart_dish_year;
+		obs.dish_month = raystart_dish_month;
+		obs.dish_day = raystart_dish_day;
+		obs.dish_hour = raystart_dish_hour;
+		obs.dish_minute = raystart_dish_minute;
+		obs.dish_second = raystart_dish_second;
+		obs.dish_centisecond = raystart_dish_centisecond;
+		obs.azimuth = raystart_azimuth;
+		obs.elevation = raystart_elevation;
+
 		raystart_year = tm.tm_year + 1900;
 		raystart_month = tm.tm_mon + 1;
 		raystart_day = tm.tm_mday;
@@ -1808,32 +1854,28 @@ int main(int argc, char *argv[])
 		if (positionMessageAct)
 		{
 			RSM_ReadPositionMessage(&position_msg);
-			obs.azimuth = position_msg.az;
-			obs.elevation = position_msg.el;
-			obs.dish_year = position_msg.year;
-			obs.dish_month = position_msg.month;
-			obs.dish_day = position_msg.day;
-			obs.dish_hour = position_msg.hour;
-			obs.dish_minute = position_msg.min;
-			obs.dish_second = position_msg.sec;
-			obs.dish_centisecond = position_msg.centi_sec;
+			raystart_azimuth = position_msg.az;
+			raystart_elevation = position_msg.el;
+			raystart_dish_year = position_msg.year;
+			raystart_dish_month = position_msg.month;
+			raystart_dish_day = position_msg.day;
+			raystart_dish_hour = position_msg.hour;
+			raystart_dish_minute = position_msg.min;
+			raystart_dish_second = position_msg.sec;
+			raystart_dish_centisecond = position_msg.centi_sec;
 		}
 		else
 		{
-			// struct tm tm;
-			// struct timeval tv;
-			// gettimeofday(&tv, NULL);
-			// gmtime_r(&tv.tv_sec, &tm);
-			obs.dish_year = tm.tm_year + 1900;
-			obs.dish_month = tm.tm_mon + 1;
-			obs.dish_day = tm.tm_mday;
-			obs.dish_hour = tm.tm_hour;
-			obs.dish_minute = tm.tm_min;
-			obs.dish_second = tm.tm_sec;
-			obs.dish_centisecond = tv.tv_usec / 10000U;
+			raystart_dish_year = raystart_year;
+			raystart_dish_month = raystart_month;
+			raystart_dish_day = raystart_day;
+			raystart_dish_hour = raystart_hour;
+			raystart_dish_minute = raystart_minute;
+			raystart_dish_second = raystart_second;
+			raystart_dish_centisecond = raystart_centisecond;
 
-			obs.azimuth = scan.scan_angle;
-			obs.elevation = scan.min_angle;
+			raystart_azimuth = scan.scan_angle;
+			raystart_elevation = scan.min_angle;
 		}
 
 		RDQ_StartAcquisition(amcc_fd, dma_bank,
