@@ -1692,8 +1692,8 @@ int main(int argc, char *argv[])
 			//	printf("There was a problem in WaitForAcquisitionToComplete\n");
 
 			/* Swap around the areas used for storing data and processing from */
-			dma_bank = 1 - dma_bank;
-			proc_bank = 1 - proc_bank;
+			//dma_bank = 1 - dma_bank;
+			//proc_bank = 1 - proc_bank;
 
 			/* Set new mode */
 			bank_C.id = IXPIO_P2;
