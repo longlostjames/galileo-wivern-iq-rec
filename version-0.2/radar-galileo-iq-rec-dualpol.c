@@ -1655,7 +1655,7 @@ int main(int argc, char *argv[])
 			raystart_hour, raystart_minute, raystart_second, raystart_centisecond);
 	printf("Ray start: %s\n", datestring);
 
-	printf("Az = %5.2f, El = %5.2f",raystart_azimuth,raystart_elevation);
+	printf("Az = %5.2f, El = %5.2f\n",raystart_azimuth,raystart_elevation);
 
 
 	RDQ_StartAcquisition(amcc_fd, dma_bank,
@@ -1675,9 +1675,9 @@ int main(int argc, char *argv[])
 		printf("ray number: %d\n", obs.ray_number);
 		printf("\n<< PRESS CTRL-C TO EXIT >>\n");
 
-		printf("Ray count: %d\n");
-		ray_count++;
-		printf("Ray count: %d\n");
+		printf("Ray count: %d\n",ray_count);
+		ray_count +=1;
+		printf("Ray count: %d\n",ray_count);
 
 		if (new_mode >= 0)
 		{
@@ -2157,7 +2157,8 @@ int main(int argc, char *argv[])
 		if ((param.alternate_modes != 0) & (param.long_pulse_mode == 0))
 		{
 			remainder = ray_count % (param.nrays_mode0 + param.nrays_mode1);
-			printf("remainder calculated\n");
+			printf("remainder calculated: %d\n");
+
 			if (remainder == 0)
 			{
 				new_mode = 0;
@@ -2171,6 +2172,7 @@ int main(int argc, char *argv[])
 			{
 				new_mode = -1;
 			}
+			printf("ray_count = %d\n",ray_count);
 		}
 		else
 		{
