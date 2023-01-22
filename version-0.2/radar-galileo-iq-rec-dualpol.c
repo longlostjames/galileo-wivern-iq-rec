@@ -1674,11 +1674,11 @@ int main(int argc, char *argv[])
 		printf("\n<< PRESS CTRL-C TO EXIT >>\n");
 
 		ray_count++;
+		printf("Ray count: %d\n");
 
 		if (new_mode >= 0)
 		{
-			printf("Ray count = %d,  Setting new mode\n");
-
+			printf("Setting new mode\n");
 			/* Wait for acquisition to complete before setting new mode */
 			/* CJW: commented out as this if statement will not be accessed for ray 0 */
 			// status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
