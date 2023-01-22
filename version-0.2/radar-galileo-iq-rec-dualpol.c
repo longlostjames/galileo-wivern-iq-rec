@@ -2157,7 +2157,7 @@ int main(int argc, char *argv[])
 		if ((param.alternate_modes != 0) & (param.long_pulse_mode == 0))
 		{
 			remainder = ray_count % (param.nrays_mode0 + param.nrays_mode1);
-			printf("remainder calculated: %d\n");
+			printf("remainder calculated: %d\n",remainder);
 
 			if (remainder == 0)
 			{
