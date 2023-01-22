@@ -2010,19 +2010,21 @@ int main(int argc, char *argv[])
 
 		if (!exit_now && tsdump && !TextTimeSeries)
 		{
-			if (NetCDFTimeSeries)
+			if (obs.ray_number > 0)
 			{
-				printf("Writing timeseries variables to NetCDF...\n");
-				WriteOutTimeSeriesData(ncidts, &param, &obs, &tsobs, 0);
-				status = nc_sync(ncidts);
-				if (status != NC_NOERR)
-					check_netcdf_handle_error(status);
-			}
-			else
-			{
-				printf("Writing timeseries variables to binary file...\n");
-				WriteOutTimeSeriesDataBinary(tsbinfid, &param, &obs, &tsobs, 0);
-				#if 0
+				if (NetCDFTimeSeries)
+				{
+					printf("Writing timeseries variables to NetCDF...\n");
+					WriteOutTimeSeriesData(ncidts, &param, &obs, &tsobs, 0);
+					status = nc_sync(ncidts);
+					if (status != NC_NOERR)
+						check_netcdf_handle_error(status);
+				}
+				else
+				{
+					printf("Writing timeseries variables to binary file...\n");
+					WriteOutTimeSeriesDataBinary(tsbinfid, &param, &obs, &tsobs, 0);
+#if 0
 				sprintf(tmp_string, "I_uncoded_H");
 				sizeofstring = strlen(tmp_string) + 1;
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
@@ -2070,7 +2072,8 @@ int main(int argc, char *argv[])
 				fwrite(&sizeofstring, sizeof(unsigned short), 1, tsbinfid);
 				fwrite(&tmp_string, sizeof(char), sizeofstring, tsbinfid);
 				fwrite(log_raw, sizeof(uint16_t), total_samples, tsbinfid);
-				#endif
+#endif
+				}
 			}
 		}
 
@@ -2106,7 +2109,7 @@ int main(int argc, char *argv[])
 		//	printf("***** New hour rollover detected.\n");
 		//	break; /* Exit loop */
 		//}
-		if (scan_duration>scan.dwelltime-2)
+		if (scan_duration>scan.dwelltime)
 		{
 			printf("***** Default scan duration elapsed.\n");
 			break; /* Exit loop */
