@@ -1677,6 +1677,11 @@ int main(int argc, char *argv[])
 
 		ray_count++;
 
+		/* Wait for data acquisition to complete */
+		status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
+		if (status != 0)
+			printf("There was a problem in WaitForAcquisitionToComplete\n");
+
 		if (new_mode >= 0)
 		{
 			printf("Setting new mode\n");
@@ -1786,9 +1791,9 @@ int main(int argc, char *argv[])
 #endif
 
 		/* Wait for data acquisition to complete */
-		status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
-		if (status != 0)
-			printf("There was a problem in WaitForAcquisitionToComplete\n");
+		//status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
+		//if (status != 0)
+		//	printf("There was a problem in WaitForAcquisitionToComplete\n");
 
 		/* get timeofday */
 		gettimeofday(&tv, NULL);
