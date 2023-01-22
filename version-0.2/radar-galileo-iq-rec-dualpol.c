@@ -1675,9 +1675,7 @@ int main(int argc, char *argv[])
 		printf("ray number: %d\n", obs.ray_number);
 		printf("\n<< PRESS CTRL-C TO EXIT >>\n");
 
-		printf("Ray count: %d\n",ray_count);
-		ray_count +=1;
-		printf("Ray count: %d\n",ray_count);
+		ray_count++;
 
 		if (new_mode >= 0)
 		{
