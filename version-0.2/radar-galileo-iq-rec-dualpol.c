@@ -1071,6 +1071,8 @@ int main(int argc, char *argv[])
 	struct sigaction sig_struct;
 
 	int nm;
+	int ray_count;
+	int remainder;
 
 	// The following are shortcut pointers to the elements of
 	// the tsobs structure
@@ -1660,8 +1662,8 @@ int main(int argc, char *argv[])
 						 (short *)(dma_banks[dma_bank]), tcount);
 
 	obs.ray_number = 0;
-	int ray_count = 0;
-	int remainder = -1;
+	ray_count = 0;
+	remainder = -1;
 
 	total_samples = (int)(param.samples_per_pulse * param.nfft);
 
