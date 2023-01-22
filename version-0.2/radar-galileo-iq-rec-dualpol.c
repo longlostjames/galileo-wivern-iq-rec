@@ -1650,13 +1650,7 @@ int main(int argc, char *argv[])
 		raystart_elevation = scan.min_angle;
 	}
 
-	sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
-			raystart_year, raystart_month, raystart_day,
-			raystart_hour, raystart_minute, raystart_second, raystart_centisecond);
-	printf("Ray start: %s\n", datestring);
-
-	printf("Az = %5.2f, El = %5.2f\n",raystart_azimuth,raystart_elevation);
-
+	
 
 	RDQ_StartAcquisition(amcc_fd, dma_bank,
 						 (short *)(dma_banks[dma_bank]), tcount);
@@ -1673,7 +1667,13 @@ int main(int argc, char *argv[])
 	while (!scanEnd && !exit_now)
 	{
 		printf("ray number: %d\n", obs.ray_number);
-		printf("\n<< PRESS CTRL-C TO EXIT >>\n");
+		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
+				raystart_year, raystart_month, raystart_day,
+				raystart_hour, raystart_minute, raystart_second, raystart_centisecond);
+		printf("Ray start: %s\n", datestring);
+		printf("Az = %5.2f, El = %5.2f\n", raystart_azimuth, raystart_elevation);
+
+		printf("\n\n<< PRESS CTRL-C TO EXIT >>\n");
 
 		ray_count++;
 
@@ -1853,11 +1853,6 @@ int main(int argc, char *argv[])
 		raystart_minute = tm.tm_min;
 		raystart_second = tm.tm_sec;
 		raystart_centisecond = (int)tv.tv_usec / 10000;
-
-		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
-				raystart_year, raystart_month, raystart_day,
-				raystart_hour, raystart_minute, raystart_second, raystart_centisecond);
-		printf("Ray start: %s\n", datestring);
 
 		/* obtain dish time */
 		if (positionMessageAct)
