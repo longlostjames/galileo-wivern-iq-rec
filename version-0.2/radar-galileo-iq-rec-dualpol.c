@@ -2106,7 +2106,7 @@ int main(int argc, char *argv[])
 		//	printf("***** New hour rollover detected.\n");
 		//	break; /* Exit loop */
 		//}
-		if (scan_duration>898)
+		if (scan_duration>scan.dwelltime-2)
 		{
 			printf("***** Default scan duration elapsed.\n");
 			break; /* Exit loop */
