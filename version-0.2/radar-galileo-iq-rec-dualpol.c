@@ -1659,6 +1659,7 @@ int main(int argc, char *argv[])
 	RDQ_StartAcquisition(amcc_fd, dma_bank,
 						 (short *)(dma_banks[dma_bank]), tcount);
 
+	obs.ray_number = 0;
 	int ray_count = 0;
 	int remainder = -1;
 
@@ -1676,6 +1677,8 @@ int main(int argc, char *argv[])
 
 		if (new_mode >= 0)
 		{
+			printf("Ray count = %d,  Setting new mode\n");
+
 			/* Wait for acquisition to complete before setting new mode */
 			/* CJW: commented out as this if statement will not be accessed for ray 0 */
 			// status = RDQ_WaitForAcquisitionToComplete(amcc_fd);
