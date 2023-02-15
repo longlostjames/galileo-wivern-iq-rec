@@ -1721,6 +1721,9 @@ int main(int argc, char *argv[])
 				break;
 			}
 
+			/* store current pulse mode - moved here in response to comments by John Nicol */
+			obs.pulse_mode = mode;
+
 #ifndef NO_DIO
 			if (ioctl(fd, IXPIO_WRITE_REG, &bank_C))
 			{
@@ -1733,10 +1736,10 @@ int main(int argc, char *argv[])
 			}
 #endif /* NO_DIO */
 			new_mode = -1;
+
 		}
 
-		/* store current pulse mode*/
-		obs.pulse_mode = mode;
+
 
 #if 0
 			/*----------------------------------------------------------------*
