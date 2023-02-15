@@ -1479,7 +1479,7 @@ int main(int argc, char *argv[])
 	make_dmux_table(param.ADC_channels, dmux_table);
 
 	/* store current pulse mode*/
-	obs.pulse_mode = mode;
+	//obs.pulse_mode = mode;
 
 	/* load in current dish_time */
 	if (positionMessageAct)
@@ -1656,6 +1656,7 @@ int main(int argc, char *argv[])
 						 (short *)(dma_banks[dma_bank]), tcount);
 
 	obs.ray_number = 0;
+	obs.pulse_mode = mode;
 	ray_count = 0;
 	remainder = -1;
 
@@ -1667,6 +1668,8 @@ int main(int argc, char *argv[])
 	while (!scanEnd && !exit_now)
 	{
 		printf("ray number: %d\n", obs.ray_number);
+		printf("pulse mode: %d\n", obs.pulse_mode);
+
 		sprintf(datestring, "%04d/%02d/%02d %02d:%02d:%02d.%02d",
 				raystart_year, raystart_month, raystart_day,
 				raystart_hour, raystart_minute, raystart_second, raystart_centisecond);
